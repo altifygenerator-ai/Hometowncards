@@ -75,3 +75,7 @@ until seller payments, tax, refunds, holds and disputes are tested.
 - eBay API reconciliation is still one-way and NOT configured; the database will reject direct checkout without a recent successful authorized eBay sync.
 - Test/verify secure webhook fulfillment, refunds, payments, accounting and inventory reconciliation before accepting charges. Live keys are not needed for the preview.
 - Future multi-seller payments use Stripe Connect; do NOT add transfers to founder-owned Stripe sessions.
+
+- Stripe merchant identity is pinned to `acct_1UPWHsDy1ZySXGQN` via `STRIPE_EXPECTED_ACCOUNT_ID`; checkout refuses an API key belonging to any other Stripe account.
+- Live event destination `we_1UPWRYDy1ZySXGQNMy9v6Ivt` is configured for https://hometowncardshop.vercel.app/api/stripe/webhook and `STRIPE_WEBHOOK_SECRET` has been saved in Vercel Production.
+- Do not create a second webhook destination. No real charges were made.

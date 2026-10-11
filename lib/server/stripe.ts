@@ -8,6 +8,16 @@ export type StripeCheckoutSession={
 };
 export type StripeEvent={id:string;type:string;livemode:boolean;data:{object:StripeCheckoutSession}};
 export const stripeReady=()=>Boolean(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_WEBHOOK_SECRET);
+/** Reject the wrong business Stripe key before creating any customer Checkout Session. */
+export async function assertExpectedStripeAccount(){
+ const secret=process.env.STRIPE_SECRET_KEY,expected=process.env.STRIPE_EXPECTED_ACCOUNT_ID;
+ if(!secret||!expected)throw new PortalError('Stripe account configuration is incomplete.',503);
+ const r=await fetch('https://api.stripe.com/v1/account',{headers:{Authorization:'Bearer '+secret},cache:'no-store'});
+ if(!r.ok)throw new PortalError('Stripe account could not be verified.',503);
+ const account=await r.json() as {id?:string;charges_enabled?:boolean};
+ if(account.id!==expected||!account.charges_enabled)
+  throw new PortalError('This Stripe account is not ready to accept payments.',503);
+}
 export async function stripePost(path:string,fields:URLSearchParams,idempotencyKey?:string):Promise<StripeCheckoutSession>{
  const secret=process.env.STRIPE_SECRET_KEY;
  if(!secret)throw new PortalError('Payments are not configured yet.',503);
