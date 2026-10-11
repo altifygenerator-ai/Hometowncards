@@ -2,7 +2,7 @@ import Link from 'next/link';import type {Product} from '@/lib/catalog';import {
 export function ProductCard({product}:{product:Product}){
  return <article className="product-card">
   <Link href={'/cards/'+product.id} className="product-art" aria-label={'View '+product.title}>
-   {product.image?<img src={product.image} alt={'Photo of '+product.title} loading="lazy" referrerPolicy="no-referrer"/>:<div className="missing-art"><span>PHOTO<br/>COMING SOON</span></div>}
+   {product.image?<img src={product.image} alt={'Photo of '+product.title} loading="lazy" referrerPolicy="no-referrer"/>:<div className="missing-art"><span>IMAGE<br/>UNAVAILABLE</span></div>}
    {product.year?<span className="year-tag">{product.year}</span>:null}
   </Link>
   <div className="product-details"><div className="product-kind">{product.sport}{product.team?' · '+product.team:''}</div>

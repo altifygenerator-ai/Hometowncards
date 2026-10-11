@@ -1,0 +1,6 @@
+'use client';
+import {useState} from 'react';
+export function PortalLogin(){const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/portal/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Sign-in failed.');location.assign('/admin/dashboard')}catch(e){setError(e instanceof Error?e.message:'Sign in could not be completed.')}finally{setBusy(false)}}
+ return <form className="portal-login-form" onSubmit={submit}><label>Email address<input required autoComplete="username" type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input required autoComplete="current-password" type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p role="alert" className="portal-error">{error}</p>}<button type="submit" className="button button-primary" disabled={busy}>{busy?'Checking…':'Open my dashboard →'}</button><p className="portal-login-foot">Access is reserved for approved shopkeepers.</p></form>
+}

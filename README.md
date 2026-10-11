@@ -40,7 +40,7 @@ Seller eBay API authorization and the one-way poll/reconcile starter are in `scr
 
 ## Launch status
 
-**Not accepting direct payments yet.** We have not provisioned a dedicated Supabase DB, connected the eBay seller account, connected checkout or authorized payouts. Stripe order processing, dynamic shipping including free gifts, idempotent webhooks, atomic reservations, eBay writeback, seller dashboards, dispute handling, payouts and buyer support are production work still required. The `POST /api/checkout` route intentionally responds `503`. Seller onboarding remains disabled until Stripe Connect, moderation, seller tax and settlement are designed and tested. The store never quietly takes orders against a stale imported eBay snapshot.
+**Not accepting direct payments yet.** We have not provisioned a dedicated Supabase DB, connected the eBay seller account, connected checkout or authorized payouts. Stripe order processing, live carrier rates, idempotent webhooks, atomic reservations, eBay writeback, disputes, seller onboarding, Connect payouts and buyer support are production work still required. Private seller dashboard screens and shipping estimators have been implemented, but require a new Supabase instance and user roles to function. The `POST /api/checkout` route intentionally responds `503`. Seller onboarding remains disabled until Stripe Connect, moderation, seller tax and settlement are designed and tested. The store never quietly takes orders against a stale imported eBay snapshot.
 
 ## Source layout
 
@@ -53,3 +53,9 @@ Seller eBay API authorization and the one-way poll/reconcile starter are in `scr
 - `supabase/schema.sql` marketplace-first seller, product, order, shipment, reward and stock schema.
 - `scripts/` snapshot import and disabled until-authorized eBay feed integration.
 - `docs/MARKETPLACE_ARCHITECTURE.md` production and future platform rollout.
+
+## Shopkeeper dashboard (Phase 1 management build)
+
+Open `/admin` and sign in with a Supabase Auth user assigned to an approved seller. The private `/admin/dashboard` includes seller-scoped inventory, CSV import preview/upsert/export, bulk site price overrides and categorization, order packing/fulfillment and editable shipping rules with bonus-card weight calculations. The founding seller can also have `platform_staff` owner access, separate from `seller_members` shop-owner access.
+
+Read **`docs/OPERATIONS_AND_ROLLOUT.md`** for the sequence: create a dedicated Supabase project, apply both SQL migrations, create the owner login, seed the catalog, configure shipping, and test eBay synchronization before any payment is turned on. All new private endpoints enforce seller authorization on the server; `SELLER_SIGNUPS_ENABLED=false` remains off.
