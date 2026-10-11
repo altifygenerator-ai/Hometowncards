@@ -20,7 +20,8 @@ export async function authenticate():Promise<{id:string;email:string}|null>{
  if(!token)return null;
  const res=await fetch(`${url}/auth/v1/user`,{headers:{apikey:serviceKey,Authorization:`Bearer ${token}`},cache:'no-store'});
  if(!res.ok)return null;
- const user=await res.json() as {id?:string;email?:string};
+ const user=await res.json() as {id?:string;email?:string;email_confirmed_at?:string};
+ if(!user.email_confirmed_at)return null;
  return user.id?{id:user.id,email:user.email||''}:null;
 }
 export async function portalContext(sellerId?:string):Promise<PortalContext>{
@@ -28,6 +29,8 @@ export async function portalContext(sellerId?:string):Promise<PortalContext>{
  const members=await db<Membership[]>(`seller_members?select=seller_id,role,sellers!inner(slug,display_name,status)&user_id=eq.${encodeURIComponent(user.id)}`);
  const admins=await db<Array<{role:'owner'|'admin'|'support'}>>(`platform_staff?select=role&user_id=eq.${encodeURIComponent(user.id)}&limit=1`);
  const platformRole=admins[0]?.role||null;
+ const expectedOwner=(process.env.SHOP_ADMIN_EMAIL||'altifygenerator@gmail.com').trim().toLowerCase();
+ if(platformRole==='owner'&&user.email.trim().toLowerCase()!==expectedOwner)throw new PortalError('This account is not authorized as the platform owner.',403);
  let allowed=members.filter(m=>m.sellers?.status==='approved');
  if(platformRole==='owner'||platformRole==='admin'){
    const known=await db<Array<{id:string;slug:string;display_name:string;status:string}>>('sellers?select=id,slug,display_name,status&status=eq.approved&order=created_at.asc&limit=100');

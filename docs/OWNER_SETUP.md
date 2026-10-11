@@ -1,0 +1,51 @@
+# Hometown Card Shop: Owner Setup & Email Routing
+
+## Cost checkpoint
+The currently connected Supabase organization "Find A Place Booking" is Pro.
+The Supabase cost estimator reports **$10/month** for another project. Owner
+approval is required before provisioning it. Don't apply any migrations to the
+Find A Place Booking or Arkansas Land Pros databases.
+
+## Provisioning order
+1. Create the dedicated Hometown Card Shop Supabase project after price approval.
+2. Apply `supabase/schema.sql` then `supabase/marketplace-operations.sql`.
+3. In Supabase Authentication > Users, **invite** `altifygenerator@gmail.com`.
+   The account owner must accept the invite and set their own password;
+   do not put passwords or invite links in source control.
+4. After email confirmation, apply `supabase/bootstrap-founder.sql`.
+   It grants that verified Auth user BOTH seller-owner and platform-owner roles.
+5. Disable public seller sign-ups in the application. Restrict Auth settings
+   as necessary, and enforce MFA for the founder once provisioned.
+6. Configure required Vercel variables listed in `.env.example`.
+7. Deploy, then test login, logout, access denial for non-member accounts, and
+   unauthorized seller scopes BEFORE enabling inventory writes.
+8. Import and verify eBay inventory. Direct checkout MUST remain disabled
+   until stock, shipping, order webhooks, payment reconciliation, and eBay
+   writeback tests pass.
+
+## Cloudflare Turnstile
+1. Cloudflare dashboard > Turnstile > Add widget.
+2. Add both the final store hostname and current Vercel preview hostname.
+3. Copy the SITE KEY into `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+4. Copy the SECRET KEY into `TURNSTILE_SECRET_KEY` (Vercel encrypted).
+5. Login requires a server-verified, single-use token with action
+   `admin-login` and matching hostname. Without keys, login is BLOCKED.
+6. Never publish the secret, bypass security verification in production, or
+   let frontend code decide authentication.
+
+## Shop email routing
+- Founder login: `SHOP_ADMIN_EMAIL=altifygenerator@gmail.com`.
+- Private alerts: `STORE_ALERT_EMAIL=altifygenerator@gmail.com`.
+- Visible contact link: `STORE_CONTACT_EMAIL=altifygenerator@gmail.com`
+  (footer currently links directly to this address).
+- To actually send automated order or support emails, verify a sender domain
+  in Resend and configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
+  The central alert helper is implemented but NOT yet connected to order events.
+- Email forwarding from a branded `@yourdomain` inbox requires separate
+  domain/DNS routing; changing app variables alone cannot do email forwarding.
+
+## Stripe and future Connect
+First-party sales use the shop's primary Stripe account.
+Outside sellers will require restricted Connect onboarding and an
+explicitly implemented settlement model. Keep `SELLER_SIGNUPS_ENABLED=false`
+until seller payments, tax, refunds, holds and disputes are tested.
