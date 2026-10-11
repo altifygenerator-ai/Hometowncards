@@ -18,7 +18,7 @@ declare
  v_ids text[]:=array[]::text[];v_quantities integer[]:=array[]::integer[];
  v_id text;v_qty integer;v_index integer;v_bought integer:=0;v_subtotal bigint:=0;
  v_bonus integer;v_available bigint;v_weight numeric;v_item_weight numeric:=0;
- v_profile record;v_candidate record;v_ship bigint:=null;v_profile_id uuid;
+ v_profile record;v_ship bigint:=null;v_profile_id uuid;v_best_weight numeric;
  v_service text;v_order uuid;v_seller_order uuid;v_lines jsonb:='[]'::jsonb;
  v_sport text; v_total bigint;v_expiry timestamptz:=now()+interval '45 minutes';
 begin
@@ -84,7 +84,7 @@ begin
      and v_subtotal>=v_profile.free_shipping_threshold_cents then 0
     else v_profile.base_cents+(v_bought+v_bonus-1)*v_profile.additional_item_cents end;
   if v_ship is null or v_available<v_ship then
-   v_ship:=v_available;v_profile_id:=v_profile.id;v_service:=v_profile.service_label;
+   v_ship:=v_available;v_profile_id:=v_profile.id;v_service:=v_profile.service_label;v_best_weight:=v_weight;
   end if;
  end loop;
  if v_ship is null then raise exception 'Shipping is not configured for this parcel';end if;
@@ -103,7 +103,7 @@ begin
  insert into public.order_bonus_cards(order_id,reward_policy_id,funding_seller_id,free_card_count,preferred_sport,pool_id)
  values(v_order,'hometown-bonus-cards-v1',v_seller,v_bonus,v_sport,v_pool.id);
  insert into public.shipping_quotes(order_id,seller_id,shipping_profile_id,quantity,gift_cards,estimated_weight_oz,charged_cents,service_label_snapshot)
- values(v_order,v_seller,v_profile_id,v_bought,v_bonus,v_weight,v_ship,v_service);
+ values(v_order,v_seller,v_profile_id,v_bought,v_bonus,v_best_weight,v_ship,v_service);
  return jsonb_build_object('order_id',v_order,'items',v_lines,'shipping_cents',v_ship,'subtotal_cents',v_subtotal,
   'bonus_cards',v_bonus,'total_cents',v_total,'shipping_service',v_service,'expires_unix',extract(epoch from v_expiry)::bigint);
 end;$$;
