@@ -50,10 +50,12 @@ export async function POST(req:NextRequest){
    add(`line_items[${i}][quantity]`,item.quantity);
   });
   const k=reserved.items.length;
+  if(reserved.shipping_cents>0){
   add(`line_items[${k}][price_data][currency]`,'usd');
   add(`line_items[${k}][price_data][unit_amount]`,reserved.shipping_cents);
   add(`line_items[${k}][price_data][product_data][name]`,reserved.shipping_service||'Shipping');
   add(`line_items[${k}][quantity]`,1);
+  }
   const session=await stripePost('checkout/sessions',params,'hcs-session-'+orderId);
   if(!session.id||!session.url||!session.url.startsWith('https://checkout.stripe.com/'))
     throw new Error('Stripe did not return a secure hosted checkout URL');
