@@ -1,13 +1,15 @@
 import {cookies} from 'next/headers';
 import {NextRequest,NextResponse} from 'next/server';
 
-const url=process.env.SUPABASE_URL?.replace(/\/$/,'');
-const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url=(process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL)?.replace(/\/$/,'');
+const secretKey=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;
+// sb_secret_* credentials belong in apikey ONLY. Legacy service_role JWTs may also use Bearer.
+function serviceHeaders(){return {apikey:secretKey!,...(secretKey?.startsWith('sb_secret_')?{}:{Authorization:`Bearer ${secretKey}`})}};
 export class PortalError extends Error {constructor(message:string,public code=400){super(message)}}
-export function isConfigured(){return !!(url&&serviceKey)}
+export function isConfigured(){return !!(url&&secretKey)}
 export async function db<T=unknown>(table:string,options:RequestInit={}):Promise<T>{
- if(!url||!serviceKey)throw new PortalError('The private shop database is not connected yet.',503);
- const response=await fetch(`${url}/rest/v1/${table}`,{...options,headers:{apikey:serviceKey,Authorization:`Bearer ${serviceKey}`,'Content-Type':'application/json',...options.headers},cache:'no-store'});
+ if(!url||!secretKey)throw new PortalError('The private shop database is not connected yet.',503);
+ const response=await fetch(`${url}/rest/v1/${table}`,{...options,headers:{...serviceHeaders(),'Content-Type':'application/json',...options.headers},cache:'no-store'});
  if(!response.ok){console.error('Shop database error',response.status,table.split('?')[0],(await response.text()).slice(0,500));throw new PortalError('The shop database could not complete this request.',502)}
  if(response.status===204)return null as T;
  const data=await response.text();return(data?JSON.parse(data):null) as T;
@@ -15,10 +17,10 @@ export async function db<T=unknown>(table:string,options:RequestInit={}):Promise
 export type Membership={seller_id:string;role:'owner'|'manager'|'staff';sellers:{slug:string;display_name:string;status:string}};
 export type PortalContext={userId:string;email:string;platformRole:'owner'|'admin'|'support'|null;memberships:Membership[];sellerId:string;sellerName:string;role:Membership['role'];isFounder:boolean};
 export async function authenticate():Promise<{id:string;email:string}|null>{
- if(!url||!serviceKey)return null;
+ if(!url||!secretKey)return null;
  const token=(await cookies()).get('hcs_portal_access')?.value;
  if(!token)return null;
- const res=await fetch(`${url}/auth/v1/user`,{headers:{apikey:serviceKey,Authorization:`Bearer ${token}`},cache:'no-store'});
+ const res=await fetch(`${url}/auth/v1/user`,{headers:{apikey:secretKey,Authorization:`Bearer ${token}`},cache:'no-store'});
  if(!res.ok)return null;
  const user=await res.json() as {id?:string;email?:string;email_confirmed_at?:string};
  if(!user.email_confirmed_at)return null;

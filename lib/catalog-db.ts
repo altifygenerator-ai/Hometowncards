@@ -1,8 +1,8 @@
 import type {Product} from '@/lib/catalog';
 import {getProducts} from '@/lib/catalog';
 
-const url=process.env.SUPABASE_URL;
-const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL;
+const key=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;
 const production=process.env.NEXT_PUBLIC_STORE_LIVE==='true';
 /** Preview uses a clearly identified snapshot; live mode NEVER falls back to stale stock. */
 export async function getCatalog():Promise<Product[]>{
@@ -11,7 +11,7 @@ export async function getCatalog():Promise<Product[]>{
   const result:Product[]=[];
   for(let offset=0;offset<15000;offset+=1000){
    const u=`${url}/rest/v1/products?select=*,sellers!inner(slug,display_name,status)&sellers.status=eq.approved&status=eq.published&stock=gt.0&needs_review=eq.false&manual_paused=eq.false&order=created_at.desc&offset=${offset}&limit=1000`;
-   const res=await fetch(u,{headers:{apikey:key,Authorization:'Bearer '+key},next:{revalidate:90}});
+   const res=await fetch(u,{headers:{apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key})},next:{revalidate:90}});
    if(!res.ok)throw new Error('Catalog DB returned '+res.status);
    const rows=await res.json() as Array<Record<string,unknown>>;
    for(const x of rows){const seller=(x.sellers||{}) as Record<string,unknown>;

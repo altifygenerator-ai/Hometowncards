@@ -52,3 +52,12 @@ First-party sales use the shop's primary Stripe account.
 Outside sellers will require restricted Connect onboarding and an
 explicitly implemented settlement model. Keep `SELLER_SIGNUPS_ENABLED=false`
 until seller payments, tax, refunds, holds and disputes are tested.
+
+## New Supabase API keys (October 2026)
+- Supabase Project URL: `https://wqzidxudbwornpwgnsbj.supabase.co`.
+- `NEXT_PUBLIC_SUPABASE_URL` is the same project API URL, **not** the card shop website URL.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the new `sb_publishable_...` key.
+- `SUPABASE_SECRET_KEY` is the new `sb_secret_...` key; set it as a **Sensitive** or encrypted Vercel variable.
+- The server uses only `apikey` for new secret keys. Never place a secret into `NEXT_PUBLIC_...` variables or `Authorization: Bearer`.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are supported legacy fallbacks; do not put any private value into the anon key.
+- Database API keys do not provision a founder Auth user: the invitation and verified-email owner bootstrap still apply.

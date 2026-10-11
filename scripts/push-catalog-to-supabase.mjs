@@ -3,9 +3,9 @@
  * Only against a dedicated DB AFTER applying supabase/schema.sql. Never turns on payments.
  */
 import fs from 'node:fs';
-const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
-if(!url||!key){console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');process.exit(1)}
-const root=`${url}/rest/v1/`;const headers={apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'};
+const url=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;
+if(!url||!key){console.error('Missing SUPABASE_URL or SUPABASE_SECRET_KEY');process.exit(1)}
+const root=`${url}/rest/v1/`;const headers={apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key}),'Content-Type':'application/json'};
 async function fetchDb(path,options={}){const res=await fetch(root+path,{...options,headers:{...headers,...options.headers}});if(!res.ok)throw new Error(`${path}: ${res.status} ${(await res.text()).slice(0,400)}`);return res.status===204?null:res.json()}
 const sellers=await fetchDb('sellers?slug=eq.hometown-card-shop&select=id&limit=1');
 if(sellers.length!==1)throw new Error('Founding seller not configured; apply marketplace schema first.');

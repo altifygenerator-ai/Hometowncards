@@ -8,7 +8,8 @@ export async function POST(req:NextRequest){
   const body=await req.json() as {email?:string;password?:string;turnstileToken?:string};
   if(!body.email||!body.password||body.email.length>250||body.password.length>250)throw new PortalError('Enter your email and password.');
   await verifyTurnstile(body.turnstileToken,'admin-login',req);
-  const base=process.env.SUPABASE_URL!;const anon=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const base=(process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL)!;
+  const anon=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if(!anon)throw new PortalError('Shop sign-in is not configured yet.',503);
   const auth=await fetch(`${base}/auth/v1/token?grant_type=password`,{method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},body:JSON.stringify({email:body.email,password:body.password}),cache:'no-store'});
   if(!auth.ok){return json({error:'Could not sign in. Check your email and password.'},401)}
