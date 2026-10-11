@@ -2,7 +2,7 @@ import type {NextRequest} from 'next/server';
 import {PortalError} from '@/lib/server/portal';
 
 /** Always check challenge tokens on the SERVER. Missing production keys fail closed. */
-export async function verifyTurnstile(token:unknown,action:'admin-login'|'customer-contact',req:NextRequest){
+export async function verifyTurnstile(token:unknown,action:'admin-login'|'customer-contact'|'checkout',req:NextRequest){
  const secret=process.env.TURNSTILE_SECRET_KEY;
  if(!secret)throw new PortalError('Verification is temporarily unavailable. Please try again later.',503);
  if(typeof token!=='string'||!token||token.length>2048)throw new PortalError('Please complete the security check.',400);

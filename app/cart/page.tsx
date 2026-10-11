@@ -1,5 +1,5 @@
 'use client';
-import Link from 'next/link';import {useState} from 'react';import {useCart} from '@/components/cart-provider';import {Icon} from '@/components/icons';import {bonusCount,nextReward} from '@/lib/rewards';
+import Link from 'next/link';import {CartCheckout} from '@/components/cart-checkout';import {useState} from 'react';import {useCart} from '@/components/cart-provider';import {Icon} from '@/components/icons';import {bonusCount,nextReward} from '@/lib/rewards';
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n/100);
 export default function CartPage(){const {lines,subtotal,count,change,remove,ready}=useCart();const [sport,setSport]=useState('Any sport / Surprise mix');const bonus=bonusCount(subtotal);const next=nextReward(subtotal);
  return <><div className="shop-intro cart-heading"><div className="shell"><span className="kicker">YOUR NEXT CARDS</span><h1>Your cart.</h1><p>Build a stack. Your bonus cards will follow.</p></div></div><div className="shell cart-layout"><div className="cart-lines">
@@ -8,6 +8,6 @@ export default function CartPage(){const {lines,subtotal,count,change,remove,rea
  <aside className="cart-summary"><h2>Order summary</h2><div className="summary-line"><span>{count} {count===1?'item':'items'}</span><b>{money(subtotal)}</b></div><div className="summary-line"><span>Shipping</span><span>Calculated at checkout</span></div><div className="summary-total"><span>Merchandise subtotal</span><strong>{money(subtotal)}</strong></div>
  <div className="cart-rewards"><div className="cart-reward-top"><Icon name="gift" size={22}/><strong>{bonus>0?`${bonus} free bonus cards earned!`:'Your free cards start with the first purchase.'}</strong></div>{next?<><p>Just <b>{money(next.remaining)}</b> more to unlock {next.count} free cards.</p><div className="reward-meter"><div style={{width:Math.max(2,100*(subtotal/next.goal))+'%'}}/></div></>:<p>You’ve reached our top reward tier. 20 free bonus cards come with this order.</p>}</div>
  <label className="cart-sport-label" htmlFor="free-sport">Preferred bonus card sport</label><select id="free-sport" value={sport} onChange={e=>setSport(e.target.value)}><option>Any sport / Surprise mix</option><option>Baseball</option><option>Football</option><option>Basketball</option></select>
- <button className="button button-primary checkout-disabled" disabled>{'Secure checkout coming soon'}</button><p className="checkout-explainer"><Icon name="shield" size={17}/> Online checkout isn't available yet. Please check back for our grand opening.</p>
+ <CartCheckout lines={lines} bonusSport={sport}/>
  <div className="summary-fine">Every paid merchandise order earns at least 1 common bonus card, even a single 89¢ card. Rewards never stack, and shipping/tax do not count toward thresholds. Bonus cards are selected from Hometown Card Shop bulk inventory and shipped with your order.</div></aside></div></>;
 }

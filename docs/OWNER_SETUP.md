@@ -61,3 +61,17 @@ until seller payments, tax, refunds, holds and disputes are tested.
 - The server uses only `apikey` for new secret keys. Never place a secret into `NEXT_PUBLIC_...` variables or `Authorization: Bearer`.
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are supported legacy fallbacks; do not put any private value into the anon key.
 - Database API keys do not provision a founder Auth user: the invitation and verified-email owner bootstrap still apply.
+
+## Stripe integration foundation (October 2026)
+- Founder payments charge the MAIN Hometown Card Shop Stripe account, not Connect.
+- Server: `STRIPE_SECRET_KEY` and webhook signing `STRIPE_WEBHOOK_SECRET`.
+- Set `STRIPE_AUTOMATIC_TAX=true` only after registering and enabling tax collection in Stripe.
+- `STRIPE_CHECKOUT_ENABLED`, `NEXT_PUBLIC_CHECKOUT_ENABLED`, and `NEXT_PUBLIC_STORE_LIVE` stay **false** pending owner-controlled launch.
+- Database switch `marketplace_settings.checkout_enabled` stays **false** separately.
+- New webhook endpoint: `https://www.hometowncardshop.com/api/stripe/webhook` (only after DNS points to Vercel), or the working Vercel hostname beforehand.
+- Listen to `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`.
+- Apply `supabase/stripe-checkout.sql` prior to deployment (already applied to dedicated project).
+- Founder must define shipping_profiles and stock the bonus_card_pools; reward_policies.is_active must be true when packing stock is ready.
+- eBay API reconciliation is still one-way and NOT configured; the database will reject direct checkout without a recent successful authorized eBay sync.
+- Test/verify secure webhook fulfillment, refunds, payments, accounting and inventory reconciliation before accepting charges. Live keys are not needed for the preview.
+- Future multi-seller payments use Stripe Connect; do NOT add transfers to founder-owned Stripe sessions.
