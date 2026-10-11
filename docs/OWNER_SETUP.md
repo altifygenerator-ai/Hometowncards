@@ -38,8 +38,11 @@ Find A Place Booking or Arkansas Land Pros databases.
 - Private alerts: `STORE_ALERT_EMAIL=altifygenerator@gmail.com`.
 - Visible contact link: `STORE_CONTACT_EMAIL=altifygenerator@gmail.com`
   (footer currently links directly to this address).
-- To actually send automated order or support emails, verify a sender domain
-  in Resend and configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
+- Configured sender: `Hometown Card Shop <orders@hometownwebservicesar.cc>`.
+  This requires `hometownwebservicesar.cc` to be verified in Resend.
+- Reply-to: `altifygenerator@gmail.com` via `RESEND_REPLY_TO_EMAIL`.
+- To actually send automated order or support emails, verify the sender domain
+  in Resend and configure `RESEND_API_KEY`.
   The central alert helper is implemented but NOT yet connected to order events.
 - Email forwarding from a branded `@yourdomain` inbox requires separate
   domain/DNS routing; changing app variables alone cannot do email forwarding.
