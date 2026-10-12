@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import {PriceResearchPanel} from '@/components/portal/price-research-panel';
 import {useCallback,useEffect,useState} from 'react';
 type Listing={id:string;source:string;source_item_id:string;sku:string;title:string;description:string;price_cents:number;price_override_cents:number|null;stock:number;status:string;needs_review:boolean;manual_paused:boolean;sport:string;team:string;player:string;card_year:string;card_set:string;card_number:string;condition:string;category:string;inventory_location:string;seller_notes:string;image_url:string|null;back_image_url:string|null;manual_image_url:string|null;manual_back_image_url:string|null};
 type Photo={id:string;slot:string;public_url:string};
@@ -119,6 +120,7 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
     <small>Verify the year, set, card number, parallel and actual condition before pricing. This tool does not supply verified sale prices.</small>
    </div>}
   </section>
+  <PriceResearchPanel id={id} sellerId={sellerId} sitePriceCents={detail.product.price_override_cents} onPriceApplied={load}/>
   <section className="portal-panel"><h2>Card details</h2>
    <div className="portal-form-grid">
     {fields.map(([key,label])=><label key={key}>{label}<input value={String(form[key]??'')} maxLength={key==='title'?250:120}
