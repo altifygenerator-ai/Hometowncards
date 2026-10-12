@@ -100,7 +100,7 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
    {STATE_CHOICES.map(([code,name])=><option value={code} key={code}>{name} ({code})</option>)}
   </select>:<input name={key} type="text" value={address[key]} onChange={e=>editAddress(key,e.target.value)}
    autoComplete={props.autoComplete||'off'} placeholder={props.placeholder||''}
-   maxLength={key==='line1'?160:key==='line2'?90:key==='state'?2:key==='postalCode'?10:120}
+   maxLength={key==='line1'?160:key==='line2'?90:key==='postalCode'?10:120}
    required={key!=='line2'} pattern={props.pattern} inputMode={key==='postalCode'?'numeric':undefined}/>}
  </label>;
  const rateText=currentTax?address.state+' state base tax ('+(currentTax.rate*100).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'%)':'State sales tax';
