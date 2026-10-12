@@ -3,7 +3,7 @@ export async function GET(req:NextRequest){try{const {sellerId}=await authorized
 export async function POST(req:NextRequest){try{
  const {sellerId}=await authorized(req,'manage');const body=await req.json() as Record<string,unknown>;
  const name=safeTerm(body.name,100),service_label=safeTerm(body.service_label,120)||'Standard shipping';if(!name)throw new PortalError('Enter a shipping profile name.');
- const ints=['base_cents','additional_item_cents','max_items'];const decimals=['max_weight_oz','packaging_weight_oz','default_item_weight_oz'];const patch:Record<string,unknown>={seller_id:sellerId,name,service_label,active:body.active!==false,allows_bonus_cards:body.allows_bonus_cards!==false,sort_order:Math.floor(Number(body.sort_order)||0),notes:safeTerm(body.notes,500)};
+ const ints=['base_cents','additional_item_cents','max_items'];const decimals=['max_weight_oz','packaging_weight_oz','default_item_weight_oz','bonus_item_weight_oz'];const patch:Record<string,unknown>={seller_id:sellerId,name,service_label,active:body.active!==false,allows_bonus_cards:body.allows_bonus_cards!==false,sort_order:Math.floor(Number(body.sort_order)||0),notes:safeTerm(body.notes,500)};
  for(const key of ints){const n=Number(body[key]);if(!Number.isInteger(n)||n<0||n>100000||(key==='max_items'&&n===0))throw new PortalError(`Invalid ${key}.`);patch[key]=n}
  for(const key of decimals){const n=Number(body[key]);if(!Number.isFinite(n)||n<0||n>10000||(key!=='packaging_weight_oz'&&n===0))throw new PortalError(`Invalid ${key}.`);patch[key]=n}
  const mode=safeTerm(body.shipping_class,12)||'tracked';
