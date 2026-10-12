@@ -1,5 +1,5 @@
 import Link from 'next/link';
-export const metadata={title:'Shipping & Returns',description:'Affordable shipping for sports and trading cards at Hometown Card Shop, with letter, tracked and insured parcel options.'};
+export const metadata={title:'Shipping & Returns',description:'Affordable shipping for sports and trading cards at Hometown Card Shop, with letter, tracked and insured parcel options.',alternates:{canonical:'/shipping'}};
 export default function Shipping(){return <><section className="inner-hero"><div className="shell">
  <span className="kicker">GOOD CARDS, PACKED RIGHT</span><h1>Shipping &amp; returns.</h1>
  <p>Keeping shipping affordable without leaving valuable cards unprotected.</p>
