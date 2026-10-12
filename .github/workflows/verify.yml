@@ -21,6 +21,8 @@ jobs:
         run: node scripts/test-stripe-checkout-timing.mjs
       - name: Optional eBay seller sync security safeguards
         run: node scripts/test-ebay-integration-guards.mjs
+      - name: Card-only eBay category and reconciliation safeguards
+        run: node scripts/test-ebay-card-only.mjs
       - name: Next.js build
         run: npm run build
         env:
