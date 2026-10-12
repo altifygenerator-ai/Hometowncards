@@ -28,7 +28,7 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
  },[]);
  useEffect(()=>{if(live)render()},[render]);
  useEffect(()=>{
-  if(!live||!lines.length)return;
+  if(!lines.length)return;
   let active=true;const controller=new AbortController();
   setOptions(null);setSelected('');setTax(null);
   fetch('/api/shipping/options',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -47,7 +47,7 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
   setAddress(a=>({...a,[field]:field==='state'?value.toUpperCase():value}));
  }
  async function calculateTax(){
-  if(!live||quoting||!opt||subtotal===null)return;
+  if(quoting||!opt||subtotal===null)return;
   const controller=new AbortController();abort.current?.abort();abort.current=controller;
   setQuoting(true);setTax(null);setError('');
   const fingerprintAtRequest=fingerprint;
@@ -85,8 +85,7 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
  return <div className="cart-checkout-action">
   <section className="cart-shipping-choices" aria-label="Choose shipping">
    <strong>Shipping options</strong>
-   {!live?<p>Shipping and online checkout will be available when the shop opens.</p>:
-    options===null?<p>Checking available shipping services…</p>:
+   {options===null?<p>Checking available shipping services…</p>:
     options.length===0?<p>Shipping isn’t configured for these cards yet. Please contact the shop.</p>:
     options.map(x=><label key={x.profileId} className="cart-shipping-choice">
      <input type="radio" name="shippingProfile" checked={selected===x.profileId}
@@ -97,7 +96,7 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
   </section>
   <section className="hcs-checkout-address" aria-labelledby="hcs-shipping-heading">
    <h3 id="hcs-shipping-heading">Delivery address</h3>
-   <p>We calculate applicable local sales tax using your delivery address before secure payment.</p>
+   <p>We calculate the applicable Arkansas state and local tax using the official tax-district boundaries. Some Arkansas ZIP codes require the full ZIP+4.</p>
    <div className="hcs-checkout-address-grid">
     {field('name','Full name',{autoComplete:'shipping name'})}
     {field('line1','Street address',{autoComplete:'shipping address-line1'})}
@@ -106,9 +105,9 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
     {field('state','State (2 letters)',{autoComplete:'shipping address-level1',placeholder:'AR',pattern:'[A-Za-z]{2}'})}
     {field('postalCode','ZIP code',{autoComplete:'shipping postal-code',placeholder:'71921',pattern:'[0-9]{5}(-[0-9]{4})?'})}
    </div>
-   <p className="hcs-checkout-address-help">United States shipping only. Review carefully; this address is saved with your order.</p>
+   <p className="hcs-checkout-address-help">United States shipping only. For an Arkansas address spanning local taxing districts, enter the full nine-digit ZIP+4 (e.g. 71921-1234). This address is saved with your order.</p>
   </section>
-  {live&&<button className="button button-outline hcs-checkout-tax-button" type="button" onClick={calculateTax}
+  {<button className="button button-outline hcs-checkout-tax-button" type="button" onClick={calculateTax}
    disabled={!opt||subtotal===null||quoting}>{quoting?'Checking address and tax…':'Calculate tax & order total'}</button>}
   {currentTax&&opt&&subtotal!==null&&<div className="hcs-tax-preview" role="status">
    <div><span>Cards</span><strong>{money(subtotal)}</strong></div>
