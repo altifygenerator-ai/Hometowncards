@@ -89,7 +89,7 @@ async function readArchive(data){
   if(start+compressedSize>data.length)throw Error('Archive size mismatch');
   const compressed=data.subarray(start,start+compressedSize);
   const stream=Readable.from([compressed]);
-  else if(compression!==0)throw Error('Unsupported ZIP compression');
+  if(compression!==0&&compression!==8)throw Error('Unsupported ZIP compression');
   const reader=compression===8?stream.pipe(createInflateRaw()):stream;
   const decoder=new StringDecoder('utf8');let tail='';
   for await(const chunk of reader){
