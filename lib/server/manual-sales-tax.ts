@@ -41,8 +41,3 @@ export async function quoteManualSalesTax(address:CheckoutAddress,subtotalCents:
   description:'Arkansas state, county and applicable city sales tax ('+result.basis+')'
  };
 }
-/** A tax permit and a rate lookup are independent requirements. Never invent a permit. */
-export function assertManualTaxCollectionReady(address:CheckoutAddress){
- if(address.state==='AR'&&process.env.ARKANSAS_SALES_TAX_REGISTERED!=='true')
-  throw new PortalError('Arkansas sales-tax registration is required before collecting sales tax on paid orders.',503);
-}
