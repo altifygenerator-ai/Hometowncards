@@ -58,21 +58,21 @@ export async function POST(req:NextRequest){
    add(`line_items[${i}][price_data][product_data][name]`,item.title.slice(0,120));
    add(`line_items[${i}][quantity]`,item.quantity);
   });
-  // Shipping is included in the Arkansas taxable base and charged once here.
+  // Shipping is already counted in the Arkansas taxable base. It is charged once.
+  const k=reserved.items.length;
   if(reserved.shipping_cents>0){
-   add('shipping_options[0][shipping_rate_data][type]','fixed_amount');
-   add('shipping_options[0][shipping_rate_data][display_name]',reserved.shipping_service||'Shipping');
-   add('shipping_options[0][shipping_rate_data][fixed_amount][currency]','usd');
-   add('shipping_options[0][shipping_rate_data][fixed_amount][amount]',reserved.shipping_cents);
-
+   add('line_items['+k+'][price_data][currency]','usd');
+   add('line_items['+k+'][price_data][unit_amount]',reserved.shipping_cents);
+   add('line_items['+k+'][price_data][product_data][name]',reserved.shipping_service||'Shipping');
+   add('line_items['+k+'][quantity]',1);
   }
-  // Customer sees sales tax as a standalone line item at Stripe Checkout.
+  // Stripe Checkout shows the shop-calculated sales tax as its own fixed line.
   if(manualTax.taxCents>0){
-   const idx=reserved.items.length;
-   add(`line_items[${idx}][price_data][currency]`,'usd');
-   add(`line_items[${idx}][price_data][unit_amount]`,manualTax.taxCents);
-   add(`line_items[${idx}][price_data][product_data][name]`,'Arkansas sales tax');
-   add(`line_items[${idx}][quantity]`,1);
+   const idx=k+(reserved.shipping_cents>0?1:0);
+   add('line_items['+idx+'][price_data][currency]','usd');
+   add('line_items['+idx+'][price_data][unit_amount]',manualTax.taxCents);
+   add('line_items['+idx+'][price_data][product_data][name]','Arkansas sales tax');
+   add('line_items['+idx+'][quantity]',1);
   }
   const session=await stripePost('checkout/sessions',params,'hcs-session-'+orderId);
   if(!session.id||!session.url||!session.url.startsWith('https://checkout.stripe.com/'))
