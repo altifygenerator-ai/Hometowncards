@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {PortalError} from '@/lib/server/portal';
 import {parseCheckoutAddress,quoteManualSalesTax} from '@/lib/server/manual-sales-tax';
 export const runtime='nodejs';
+export const maxDuration=60;
 export async function POST(request:NextRequest){
  try{
   const origin=request.headers.get('origin');
