@@ -12,6 +12,7 @@ const parser=new XMLParser({ignoreAttributes:false,attributeNamePrefix:'@_',text
 export type EbayConnection={
  seller_id:string;refresh_token_ciphertext:string;status:'connected'|'paused'|'error';
  sync_mode:'import_only'|'two_way';ebay_username:string|null;last_error:string|null;
+ created_at:string;
  listing_page:number;listing_total:number|null;listing_pages:number|null;
  listing_started_at:string|null;last_listing_sync_at:string|null;last_order_sync_at:string|null;
  last_writeback_at:string|null
