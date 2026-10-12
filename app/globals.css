@@ -255,3 +255,34 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .brand-cover-strip .shell{width:min(1190px,calc(100% - 30px))}
 .brand-cover-strip img{display:block;width:100%;height:auto;max-height:360px;object-fit:contain;margin:0 auto;border-radius:5px}
 @media(max-width:650px){.brand-cover-strip{padding:9px 0}.brand-cover-strip .shell{width:100%}.brand-cover-strip img{border-radius:0}}
+
+
+/* Card value research: private seller dashboard only. */
+.hcs-pricing-panel{display:grid;gap:12px}
+.hcs-pricing-panel>h2{margin-bottom:0}
+.hcs-pricing-panel>h3{font-size:17px;margin:16px 0 0;color:#10365d}
+.hcs-pricing-panel>p{line-height:1.6}
+.hcs-pricing-result{border:1px solid #cddcec;background:#f5faff;padding:17px;border-radius:8px;display:grid;gap:10px}
+.hcs-pricing-result>p{font-size:13px;margin:0;line-height:1.55}
+.hcs-pricing-heading{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.hcs-pricing-heading>span{font-size:11px;text-transform:capitalize;color:#4b647c;background:#e2edf8;padding:5px 8px;border-radius:4px}
+.hcs-pricing-muted,.hcs-pricing-footnote{font-size:12px!important;color:#66798b;line-height:1.6}
+.hcs-pricing-values{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.hcs-pricing-values>div{background:white;border:1px solid #d5e3f1;padding:12px;border-radius:6px}
+.hcs-pricing-values small{display:block;font-size:11px;color:#60768d;margin-bottom:6px}
+.hcs-pricing-values strong{font-size:17px;color:#10365d}
+.hcs-price-comps{display:grid;gap:8px}
+.hcs-price-comps>div{border:1px solid #dbe5ef;border-radius:6px;padding:11px;background:white}
+.hcs-price-comps strong{font-size:13px}
+.hcs-price-comps p{font-size:11px;color:#687c90;margin:5px 0}
+.hcs-price-comps a,.hcs-pricing-sources a{font-size:11px;text-decoration:underline;color:#1266aa}
+.hcs-manual-price-entry{border:1px solid #d5e0eb;border-radius:8px;padding:15px}
+.hcs-manual-price-entry summary{font-size:13px;font-weight:800;cursor:pointer;color:#173e62}
+.hcs-manual-price-entry>p{font-size:12px;margin:12px 0;color:#5f7083}
+.hcs-manual-price-entry .portal-form-grid{margin:10px 0}
+.hcs-pricing-sources{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.hcs-pricing-sources>div{border:1px solid #d8e4ee;padding:13px;border-radius:7px}
+.hcs-pricing-sources>div>div{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.hcs-pricing-sources strong{font-size:13px}
+.hcs-pricing-sources small{font-size:10px;color:#6c7e91}
+.hcs-pricing-sources p{font-size:11px;color:#596f83;line-height:1.5;margin:8px 0}
