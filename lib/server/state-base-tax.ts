@@ -32,7 +32,7 @@ export function quoteStateBaseTax(state:string,subtotalCents:number,shippingCent
  const taxableCents=subtotalCents+shippingCents;
  return {
   taxCents:Math.round(taxableCents*rate),rate,taxableCents,
-  source:STATE_TAX_SOURCE,description:code+' statewide base tax ('+(rate*100)+'%)',
+  source:STATE_TAX_SOURCE as typeof STATE_TAX_SOURCE,description:code+' statewide base tax ('+(rate*100)+'%)',
   state:code,
  };
 }
