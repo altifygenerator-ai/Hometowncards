@@ -48,6 +48,17 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
    await load();setMessage('Listing changes saved.');
   }catch(e){setError(e instanceof Error?e.message:'Unable to save')}finally{setBusy(false)}
  }
+ async function removeFromStore(){
+  if(!detail||!window.confirm('Remove this card from the storefront? This does NOT end its eBay listing.'))return;
+  setBusy(true);setError('');setMessage('');
+  try{
+   const patch:Record<string,unknown>={manual_paused:true};
+   if(detail.product.source!=='ebay'||detail.manualInventoryMode)patch.stock=0;
+   await send('/api/portal/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+   await load();setMessage('Card removed from the storefront. If also listed on eBay, remove it there separately until synchronization is connected.');
+  }catch(e){setError(e instanceof Error?e.message:'Unable to hide the card.')}
+  finally{setBusy(false)}
+ }
  async function upload(slot:string,file?:File){
   if(!file)return;setUploading(slot);setError('');setMessage('');
   try{const data=new FormData();const prepared=await prepareCardPhoto(file);data.append('file',prepared);data.append('slot',slot);
@@ -135,7 +146,7 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
    </div>
    <label className="hcs-editor-area">Description<textarea rows={5} value={form.description||''} maxLength={4000} onChange={e=>setForm(v=>({...v,description:e.target.value}))}/></label>
    <label className="hcs-editor-area">Private seller notes<textarea rows={3} value={form.seller_notes||''} onChange={e=>setForm(v=>({...v,seller_notes:e.target.value}))}/></label>
-   <div className="portal-button-row"><button className="button button-primary" disabled={busy||!!uploading} onClick={save}>{busy?'Saving…':'Save listing changes'}</button>
+   <div className="portal-button-row"><button className="button button-primary" disabled={busy||!!uploading} onClick={save}>{busy?'Saving…':'Save listing changes'}</button><button className="button button-outline" type="button" disabled={busy||!!uploading||item.manual_paused} onClick={removeFromStore}>Remove from storefront</button>
    <a className="button button-outline" href={'/cards/'+encodeURIComponent(sourceId)} target="_blank" rel="noreferrer">Preview as customer ↗</a></div>
    <p className="hcs-editor-help">Hide a card by choosing “Hide” and saving. Set stock to 0 to mark it sold out when manual stock management is on. Edits here do not change the actual eBay listing until the eBay integration is connected and reconciled. Remove eBay sales manually in the meantime.</p>
   </section>
