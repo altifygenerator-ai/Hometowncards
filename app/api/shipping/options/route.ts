@@ -17,14 +17,19 @@ export async function POST(req:NextRequest){
   const sellers=await db<Array<{id:string;tracking_required_from_cents:number;insurance_required_from_cents:number}>>('sellers?select=id,tracking_required_from_cents,insurance_required_from_cents&slug=eq.hometown-card-shop&status=eq.approved&limit=1');
   const seller=sellers[0];if(!seller)throw new PortalError('Shop unavailable.',503);
   const filter=[...ids].join(',');
-  const [products,profiles]=await Promise.all([
-   db<Array<{source_item_id:string;stock:number;status:string;needs_review:boolean;manual_paused:boolean;price_cents:number;price_override_cents:number|null;weight_oz:number|null;title:string;category:string}>>('products?select=source_item_id,stock,status,needs_review,manual_paused,price_cents,price_override_cents,weight_oz,title,category&source=eq.ebay&seller_id=eq.'+seller.id+'&source_item_id=in.('+filter+')'),
+  type StockProduct={id:string;source:string;source_item_id:string;stock:number;status:string;needs_review:boolean;manual_paused:boolean;price_cents:number;price_override_cents:number|null;weight_oz:number|null;title:string;category:string};
+  const fields='id,source,source_item_id,stock,status,needs_review,manual_paused,price_cents,price_override_cents,weight_oz,title,category';
+  const uuids=[...ids].filter(id=>/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id));
+  const [ebayProducts,localProducts,profiles]=await Promise.all([
+   db<StockProduct[]>('products?select='+fields+'&source=eq.ebay&seller_id=eq.'+seller.id+'&source_item_id=in.('+filter+')'),
+   uuids.length?db<StockProduct[]>('products?select='+fields+'&source=in.(manual,csv)&seller_id=eq.'+seller.id+'&id=in.('+uuids.join(',')+')'):Promise.resolve([] as StockProduct[]),
    db<ShippingProfile[]>('shipping_profiles?select=*&seller_id=eq.'+seller.id+'&active=eq.true')
   ]);
+  const products=[...ebayProducts,...localProducts];
   if(products.length!==ids.size)throw new PortalError('Your cart has unavailable cards.',409);
   let count=0,subtotal=0,purchasedPackedWeightOz=0,requiresParcel=false;
   for(const p of products){
-   const qty=quantities.get(p.source_item_id)!;
+   const qty=quantities.get(p.source==='ebay'?p.source_item_id:p.id)!;
    if(p.status!=='published'||p.needs_review||p.manual_paused||p.stock<qty)throw new PortalError('A card in your cart is no longer available.',409);
    subtotal+=(p.price_override_cents??p.price_cents)*qty;count+=qty;
    const special=/(^|[^a-z])(psa|bgs|sgc|cgc|graded|slab|booster|sealed|blaster|hobby box)([^a-z]|$)/i.test(p.title)||/(^|[^a-z])(graded|sealed|packs|boxes)([^a-z]|$)/i.test(p.category);

@@ -4,7 +4,7 @@ import {PriceResearchPanel} from '@/components/portal/price-research-panel';
 import {useCallback,useEffect,useState} from 'react';
 type Listing={id:string;source:string;source_item_id:string;sku:string;title:string;description:string;price_cents:number;price_override_cents:number|null;stock:number;status:string;needs_review:boolean;manual_paused:boolean;sport:string;team:string;player:string;card_year:string;card_set:string;card_number:string;condition:string;category:string;inventory_location:string;seller_notes:string;image_url:string|null;back_image_url:string|null;manual_image_url:string|null;manual_back_image_url:string|null};
 type Photo={id:string;slot:string;public_url:string};
-type Detail={product:Listing;photos:Photo[]};
+type Detail={product:Listing;photos:Photo[];manualInventoryMode:boolean};
 const aiEnabled=process.env.NEXT_PUBLIC_AI_CARD_TOOLS_ENABLED==='true';
 type CardAi={title:string;sport:string;player:string;team:string;year:string;set:string;cardNumber:string;variant:string;conditionNotes:string;confidence:string;soldSearchTerms:string};
 const fields=[['title','Listing title'],['sport','Sport / category'],['player','Player'],['team','Team'],['card_year','Card year'],['card_set','Set / series'],['card_number','Card number'],['condition','Condition'],['category','eBay category'],['inventory_location','Bin / box location']] as const;
@@ -43,10 +43,21 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
    const patch:Record<string,unknown>={price_override_cents:Math.round(amount*100),manual_paused:form.manual_paused===true,needs_review:form.needs_review===true};
    for(const [key] of fields)patch[key]=form[key]??'';
    patch.description=form.description||'';patch.seller_notes=form.seller_notes||'';
-   if(detail.product.source!=='ebay')patch.stock=Number(form.stock);
+   if(detail.product.source!=='ebay'||detail.manualInventoryMode)patch.stock=Number(form.stock);
    await send('/api/portal/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
    await load();setMessage('Listing changes saved.');
   }catch(e){setError(e instanceof Error?e.message:'Unable to save')}finally{setBusy(false)}
+ }
+ async function removeFromStore(){
+  if(!detail||!window.confirm('Remove this card from the storefront? This does NOT end its eBay listing.'))return;
+  setBusy(true);setError('');setMessage('');
+  try{
+   const patch:Record<string,unknown>={manual_paused:true};
+   if(detail.product.source!=='ebay'||detail.manualInventoryMode)patch.stock=0;
+   await send('/api/portal/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+   await load();setMessage('Card removed from the storefront. If also listed on eBay, remove it there separately until synchronization is connected.');
+  }catch(e){setError(e instanceof Error?e.message:'Unable to hide the card.')}
+  finally{setBusy(false)}
  }
  async function upload(slot:string,file?:File){
   if(!file)return;setUploading(slot);setError('');setMessage('');
@@ -78,13 +89,14 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
  }
   if(!detail)return <div className="portal-panel">{error?<p role="alert">{error}</p>:<p>Loading card details…</p>}</div>;
  const item=detail.product,sourceId=item.source==='ebay'?item.source_item_id:item.id;
+ const canEditStock=item.source!=='ebay'||detail.manualInventoryMode;
  const primary=form.manual_image_url||item.image_url;
  const secondary=form.manual_back_image_url||item.back_image_url;
  const bySlot=new Map(detail.photos.map(x=>[x.slot,x]));
  return <div className="hcs-listing-editor">
   <div className="hcs-editor-bar"><Link href="/admin/dashboard">← Back to inventory</Link><a href={'/cards/'+encodeURIComponent(sourceId)} target="_blank" rel="noreferrer">View customer listing ↗</a></div>
   <header className="portal-panel"><span className="kicker">EDIT CARD LISTING</span><h1>{item.title}</h1>
-   <p>SKU: {item.sku} · {item.source==='ebay'?'eBay-synced: site edits remain separate from source stock and price':'Direct shop listing'}</p>
+   <p>SKU: {item.sku} · {item.source==='ebay'?(detail.manualInventoryMode?'eBay-sourced: manually managed until synchronization is connected':'eBay-synced: site edits remain separate from source stock and price'):'Direct shop listing'}</p>
    {item.needs_review&&<p className="hcs-editor-warning">This card is hidden from the storefront until you upload or verify its photo and mark it reviewed.</p>}
   </header>
   {error&&<p role="alert" className="portal-alert portal-alert-error">{error}</p>}
@@ -126,7 +138,7 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
     {fields.map(([key,label])=><label key={key}>{label}<input value={String(form[key]??'')} maxLength={key==='title'?250:120}
      onChange={e=>setForm(v=>({...v,[key]:e.target.value}))}/></label>)}
     <label>Site price ($)<input type="number" min=".01" max="1000000" step=".01" value={price} onChange={e=>setPrice(e.target.value)}/></label>
-    <label>Available stock {item.source==='ebay'?'(controlled by eBay)':''}<input type="number" min="0" value={form.stock??0} disabled={item.source==='ebay'} onChange={e=>setForm(v=>({...v,stock:Number(e.target.value)}))}/></label>
+    <label>Available stock {item.source==='ebay'&&!canEditStock?'(controlled by eBay)':''}<input type="number" min="0" value={form.stock??0} disabled={!canEditStock} onChange={e=>setForm(v=>({...v,stock:Number(e.target.value)}))}/></label>
     <label>Show on storefront<select value={form.manual_paused?'no':'yes'} onChange={e=>setForm(v=>({...v,manual_paused:e.target.value==='no'}))}><option value="yes">Show</option><option value="no">Hide</option></select></label>
     <label>Photo review<select value={form.needs_review?'needs_review':'approved'} onChange={e=>setForm(v=>({...v,needs_review:e.target.value==='needs_review'}))}>
      <option value="needs_review">Needs review — hidden</option><option value="approved">Photo verified — publish</option>
@@ -134,9 +146,9 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
    </div>
    <label className="hcs-editor-area">Description<textarea rows={5} value={form.description||''} maxLength={4000} onChange={e=>setForm(v=>({...v,description:e.target.value}))}/></label>
    <label className="hcs-editor-area">Private seller notes<textarea rows={3} value={form.seller_notes||''} onChange={e=>setForm(v=>({...v,seller_notes:e.target.value}))}/></label>
-   <div className="portal-button-row"><button className="button button-primary" disabled={busy||!!uploading} onClick={save}>{busy?'Saving…':'Save listing changes'}</button>
+   <div className="portal-button-row"><button className="button button-primary" disabled={busy||!!uploading} onClick={save}>{busy?'Saving…':'Save listing changes'}</button><button className="button button-outline" type="button" disabled={busy||!!uploading||item.manual_paused} onClick={removeFromStore}>Remove from storefront</button>
    <a className="button button-outline" href={'/cards/'+encodeURIComponent(sourceId)} target="_blank" rel="noreferrer">Preview as customer ↗</a></div>
-   <p className="hcs-editor-help">Updates to an eBay-sourced listing here don't change its active eBay listing. Card quantities must be updated through the eBay sync.</p>
+   <p className="hcs-editor-help">Hide a card by choosing “Hide” and saving. Set stock to 0 to mark it sold out when manual stock management is on. Edits here do not change the actual eBay listing until the eBay integration is connected and reconciled. Remove eBay sales manually in the meantime.</p>
   </section>
  </div>;
 }

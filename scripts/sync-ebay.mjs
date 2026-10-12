@@ -39,13 +39,30 @@ async function getPage(access,page){const request=`<?xml version="1.0" encoding=
 async function db(method,path,body,extra={}){const key=env.SUPABASE_SECRET_KEY||env.SUPABASE_SERVICE_ROLE_KEY;const r=await fetch(env.SUPABASE_URL+'/rest/v1/'+path,{method,headers:{apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key}),'Content-Type':'application/json',...extra},body:body?JSON.stringify(body):undefined});if(!r.ok)throw new Error(`Supabase ${method} ${r.status}: ${(await r.text()).slice(0,200)}`);return r.status===204?null:r.json()}
 const sellerRows=await db('GET','sellers?slug=eq.hometown-card-shop&select=id&limit=1');if(sellerRows.length!==1)throw new Error('Founding seller not configured');const sellerId=sellerRows[0].id;
 const existing=[];for(let offset=0;offset<15000;offset+=1000){const rows=await db('GET',`products?select=source_item_id,status,sku,price_cents,sport,team,player,card_year,card_set,card_number,condition,image_url,back_image_url,needs_review,listing_overrides&seller_id=eq.${sellerId}&source=eq.ebay&offset=${offset}&limit=1000`);existing.push(...rows);for(const row of rows)dbKnown.set(row.source_item_id,row);if(rows.length<1000)break;}
+const pendingSold=new Map();
+for(let offset=0;offset<15000;offset+=1000){
+ const rows=await db('GET',`ebay_sale_outbox?select=source_item_id,sold_quantity&seller_id=eq.${sellerId}&state=in.(pending_connection,pending,processing,needs_review)&order=created_at.asc&offset=${offset}&limit=1000`);
+ for(const row of rows)pendingSold.set(row.source_item_id,(pendingSold.get(row.source_item_id)||0)+row.sold_quantity);
+ if(rows.length<1000)break;
+}
+
 const access=await token();const first=await getPage(access,1);const all=[...first.items];const pages=Math.max(1,first.pages);
 if(pages>100||first.total>15000)throw new Error('Listing count outside configured safety limits');
 for(let page=2;page<=pages;page++){const next=await getPage(access,page);if(next.total!==first.total||next.pages!==pages)throw new Error('Listings changed mid-sync; abort without writing.');all.push(...next.items)}
+// Do not resurrect cards sold on our site until the corresponding eBay update is confirmed.
+for(const item of all){
+ const outstanding=pendingSold.get(item.source_item_id)||0;
+ if(outstanding>0){
+  item.stock=Math.max(0,item.stock-outstanding);
+  item.status=item.stock>0?'published':'sold_out';
+ }
+}
 const ids=new Set(all.map(x=>x.source_item_id));if(ids.size!==first.total)throw new Error(`Incomplete eBay response: ${ids.size} unique IDs, expected ${first.total}. No database changes made.`);
 const oldActive=existing.filter(x=>x.status==='published').length;
 if(oldActive>100 && all.length<oldActive*.7)throw new Error('Safety abort: major drop (>30%) from last active inventory, manual review required.');
 for(let i=0;i<all.length;i+=100)await db('POST','products?on_conflict=seller_id%2Csource%2Csource_item_id',all.slice(i,i+100).map(x=>({...x,seller_id:sellerId})),{'Prefer':'resolution=merge-duplicates,return=minimal'});
 const missing=existing.filter(x=>x.status==='published'&&!ids.has(x.source_item_id)).map(x=>x.source_item_id);
 for(const id of missing)await db('PATCH',`products?seller_id=eq.${sellerId}&source=eq.ebay&source_item_id=eq.${encodeURIComponent(id)}`,{stock:0,status:'sold_out',updated_at:new Date().toISOString()},{Prefer:'return=minimal'});
+await db('POST','seller_integrations?on_conflict=seller_id%2Cprovider',[{seller_id:sellerId,provider:'ebay',status:'connected',last_successful_sync:new Date().toISOString(),last_error:null}],
+ {'Prefer':'resolution=merge-duplicates,return=minimal'});
 console.log(JSON.stringify({fetched:all.length,updated:all.length,deactivated:missing.length,completed:new Date().toISOString()}));
