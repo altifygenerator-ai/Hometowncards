@@ -1,9 +1,10 @@
 import 'server-only';
 import {db,PortalError} from '@/lib/server/portal';
 import {getAccessToken,getConnection,tradingCall,xmlList,xmlText,ebayGetOrders} from '@/lib/server/ebay';
+import {classifyEbayCardCategory} from '@/lib/ebay-card-categories';
 
 type PageItem=Record<string,unknown>;
-type Listing={id:string;sku:string;title:string;price:number;quantity:number;category:string;image:string;back:string;sport:string};
+type Listing={id:string;categoryId:string;sku?:string;title?:string;price?:number;quantity?:number;category?:string;image?:string;back?:string;sport?:string};
 type Paged={items:Listing[];total:number;pages:number};
 type Conn={seller_id:string;listing_page:number;listing_total:number|null;listing_pages:number|null;listing_started_at:string|null;
  last_order_sync_at:string|null;last_listing_sync_at:string|null;sync_mode:string;created_at:string};
@@ -11,7 +12,14 @@ const now=()=>new Date().toISOString();
 function validHttps(s:string){return /^https:\/\//.test(s)?s:'';}
 function mapListing(x:PageItem):Listing|null{
  const id=xmlText(x.ItemID),title=xmlText(x.Title);
- if(!/^\d{9,22}$/.test(id)||title.length<2)return null;
+ if(!/^\d{9,22}$/.test(id))return null;
+ const categoryNode=x.PrimaryCategory as Record<string,unknown>|undefined;
+ const categoryId=xmlText(categoryNode?.CategoryID).trim();
+ const disposition=classifyEbayCardCategory(categoryId);
+ // eBay non-cards are returned as IDs only: the database hides existing
+ // imported copies but never deletes or alters listings on eBay.
+ if(disposition!=='card')return {id,categoryId};
+ if(title.length<2)return null;
  const price=Math.round(Number(xmlText((x.SellingStatus as Record<string,unknown>)?.CurrentPrice||x.StartPrice))*100);
  const quantityAvailable=Number(xmlText(x.QuantityAvailable));
  const quantity=Number.isFinite(quantityAvailable)&&quantityAvailable>=0
@@ -23,7 +31,7 @@ function mapListing(x:PageItem):Listing|null{
  const category=xmlText((x.PrimaryCategory as Record<string,unknown>)?.CategoryName).slice(0,120);
  const sport=['Baseball','Basketball','Football','Hockey','Soccer','Golf'].find(s=>
   (title+' '+category).toLowerCase().includes(s.toLowerCase()))||'Other Cards';
- return {id,sku:xmlText(x.SKU).slice(0,120),title:title.slice(0,250),price,quantity,category,sport,
+ return {id,categoryId,sku:xmlText(x.SKU).slice(0,120),title:title.slice(0,250),price,quantity,category,sport,
   image:images[0]||validHttps(xmlText(photos?.GalleryURL)),back:images[1]||''};
 }
 async function getPage(access:string,page:number):Promise<Paged>{
@@ -84,7 +92,7 @@ export async function syncEbayOrders(sellerId:string,access:string,conn:Conn){
 /** One bounded import pass; repeat via dashboard until finished. */
 export async function syncEbayListings(sellerId:string,access:string,conn:Conn){
  let page=Math.max(1,conn.listing_page||1),expected=conn.listing_total,starting=conn.listing_started_at;
- let imported=0,review=0,completed=false,processed=0,totalPages=1;
+ let imported=0,review=0,excluded=0,ignored=0,unknown=0,completed=false,processed=0,totalPages=1;
  // Three pages per request (up to 600 items); well within function timeout.
  for(let i=0;i<3;i++){
   const result=await getPage(access,page);totalPages=result.pages;
@@ -92,11 +100,15 @@ export async function syncEbayListings(sellerId:string,access:string,conn:Conn){
   if(!starting)starting=now();
   if(expected===null)expected=result.total;
   if(result.items.length){
-   const sums=await rpc<{created:number;updated:number;review:number}>('hcs_import_ebay_listing_page',{
+   const sums=await rpc<{created:number;updated:number;review:number;excluded:number;ignored:number;unknown:number}>('hcs_reconcile_ebay_cards_page',{
     p_seller:sellerId,p_items:result.items,p_synced_at:now()
    });
    imported+=sums.created+sums.updated;
-   review+=sums.review;processed+=result.items.length;
+   review+=sums.review;
+   excluded+=sums.excluded;
+   ignored+=sums.ignored;
+   unknown+=sums.unknown;
+   processed+=result.items.length;
   }
   page++;
   await updateConnection(sellerId,{listing_page:page,listing_total:expected,
@@ -108,7 +120,7 @@ export async function syncEbayListings(sellerId:string,access:string,conn:Conn){
   // Sellers can review discontinued eBay items; avoids mass delisting on transient snapshots.
   await updateConnection(sellerId,{listing_page:1,listing_total:null,listing_pages:null,listing_started_at:null,last_listing_sync_at:now()});
  }
- return {imported,review,processed,page:completed?null:page,totalPages,finished:completed};
+ return {imported,review,excluded,ignored,unknown,processed,page:completed?null:page,totalPages,finished:completed};
 }
 function esc(s:string){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 type Outbox={id:string;source_item_id:string;sold_quantity:number;product_id:string};
