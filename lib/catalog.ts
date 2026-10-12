@@ -48,14 +48,49 @@ export function searchProducts(filters: SearchFilters, source: Product[] = inven
  const page=Math.max(1,Math.min(2000,Math.floor(Number(filters.page)||1)));
  return {items:result.slice((page-1)*perPage,page*perPage),total:count,page,perPage,pages:Math.ceil(count/perPage)};
 }
+/**
+ * Curate pictured, in-stock cards across budget, middle, and premium price tiers.
+ * Use price rank rather than hard dollar cutoffs so the mix adapts as stock changes.
+ * Prefer different sports before repeating a sport in the same tier.
+ */
 export function recommended(count=8, source: Product[] = inventory){
-  // A consistent selection of real, pictured cards at a variety of prices.
-  const cards=source.filter(x=>x.image && x.sport!=='Collectibles' && x.price>=200 && x.price<=2500);
-  const sports=['Baseball','Football','Basketball','Baseball','Football'];
-  const picked:Product[]=[];
-  for(const sport of sports){const candidate=cards.find(x=>x.sport===sport && !picked.some(y=>y.id===x.id));if(candidate)picked.push(candidate);}
-  for(const x of cards){if(picked.length>=count)break;if(!picked.some(y=>y.id===x.id))picked.push(x);}
-  return picked.slice(0,count);
+ const limit=Math.max(0,Math.floor(count));
+ if(limit===0)return [];
+ const priced=source.filter(p=>p.quantity>0&&p.price>0&&Boolean(p.image)&&p.sport!=='Collectibles')
+  .sort((a,b)=>a.price-b.price||a.id.localeCompare(b.id));
+ if(!priced.length)return [];
+ const budgetEnd=Math.max(1,Math.ceil(priced.length*.35));
+ const premiumStart=Math.max(budgetEnd,Math.floor(priced.length*.75));
+ const middlePrice=priced[Math.floor(priced.length/2)].price;
+ const pools={
+  budget:priced.slice(0,budgetEnd),
+  mid:priced.slice(budgetEnd,premiumStart).sort((a,b)=>Math.abs(a.price-middlePrice)-Math.abs(b.price-middlePrice)||a.id.localeCompare(b.id)),
+  premium:priced.slice(premiumStart).reverse()
+ };
+ const cadence: Array<keyof typeof pools>=['premium','budget','mid','budget','premium','mid','budget','mid'];
+ const picked:Product[]=[];
+ const selected=new Set<string>();
+ const sportsSeen=new Map<string,number>();
+ function take(pool:Product[]){
+  let best:Product|undefined;let score=Infinity;
+  for(const p of pool){
+   if(selected.has(p.id))continue;
+   const n=sportsSeen.get(p.sport)||0;
+   if(n<score){best=p;score=n;if(n===0)break;}
+  }
+  if(!best)return false;
+  picked.push(best);selected.add(best.id);
+  sportsSeen.set(best.sport,(sportsSeen.get(best.sport)||0)+1);
+  return true;
+ }
+ const tiers=Object.keys(pools) as Array<keyof typeof pools>;
+ for(let i=0;picked.length<Math.min(limit,priced.length);i++){
+  const preferred=cadence[i%cadence.length];
+  if(!take(pools[preferred])){
+   for(const tier of tiers){if(take(pools[tier]))break;}
+  }
+ }
+ return picked;
 }
 
 export function sportsFor(source: Product[]){ const counts=new Map<string,number>();for(const p of source)counts.set(p.sport,(counts.get(p.sport)||0)+1);return ['Baseball','Football','Basketball','Golf','Racing','Other Cards','Collectibles'].map(name=>({name,count:counts.get(name)||0}));}
