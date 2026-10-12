@@ -5,6 +5,7 @@ import {stripePost,assertExpectedStripeAccount} from '@/lib/server/stripe';
 import {parseCheckoutAddress,quoteManualSalesTax,assertManualTaxCollectionReady} from '@/lib/server/manual-sales-tax';
 import {verifyTurnstile} from '@/lib/server/turnstile';
 export const runtime='nodejs';
+export const maxDuration=60;
 type Line={id:string;quantity:number};
 type Reservation={order_id:string;items:{title:string;quantity:number;unit_price_cents:number}[];shipping_cents:number;subtotal_cents:number;bonus_cards:number;total_cents:number;shipping_service:string};
 function error(message:string,status=503){return NextResponse.json({error:message},{status,headers:{'Cache-Control':'no-store'}})}
