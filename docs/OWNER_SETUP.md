@@ -100,3 +100,11 @@ until seller payments, tax, refunds, holds and disputes are tested.
 - Disputes and refunds are LOGGED for review, not automatically processed or paid out; this requires full financial reconciliation before onboarding other sellers.
 - No seller Connect account is created automatically from an interest submission.
 - `STRIPE_CONNECT_ONBOARDING_ENABLED=false` keeps onboarding disabled until payout liability, tax, support and refunds are implemented.
+
+## Dealer interest / onboarding
+- `/sell` accepts protected interest submissions, writes private `seller_interest_leads` records and emails `STORE_ALERT_EMAIL` through Resend.
+- Owner-only `/api/portal/dealer-interest` and Dealer interest dashboard show the latest inquiries.
+- An inquiry creates NO seller account, subscription, Connect account, or charge.
+- `/api/portal/connect` GET/POST supports Stripe Express creation and account links ONLY for already-approved outside seller owners and only when `STRIPE_CONNECT_ONBOARDING_ENABLED=true`, `SELLER_SIGNUPS_ENABLED=true` and DB `seller_signup_enabled=true`.
+- Separate classic Connect webhooks recorded in `connect_webhook_events`; disputed charges, returns and payouts still require detailed financial handling before anyone sells.
+- Stripe Connect webhook secret must be set in `STRIPE_CONNECT_WEBHOOK_SECRET`; never share with the main payment webhook.
