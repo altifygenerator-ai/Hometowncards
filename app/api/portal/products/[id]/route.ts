@@ -43,6 +43,8 @@ export async function PATCH(req:NextRequest,ctx:{params:Promise<{id:string}>}){
   if(old.source==='ebay'&&stock===0)patch.manual_paused=true;
  }
  if(Object.prototype.hasOwnProperty.call(body,'manual_paused'))patch.manual_paused=body.manual_paused===true;
+ // A manually sold-out eBay card must stay paused even when the eBay feed refreshes.
+ if(old.source==='ebay'&&patch.stock===0)patch.manual_paused=true;
  if(Object.prototype.hasOwnProperty.call(body,'needs_review')){
   if(body.needs_review!==true&&body.needs_review!==false)throw new PortalError('Invalid review status.');
   if(body.needs_review===false&&!old.manual_image_url&&!old.image_url)throw new PortalError('Upload a front photo before clearing the photo review flag.');
