@@ -8,7 +8,7 @@ import {Icon} from '@/components/icons';
 
 export default async function Home(){
  const products=await getCatalog();
- const picks=recommended(8,products);const cards=recommended(3,products);
+ const featured=recommended(11,products);const cards=featured.slice(0,3);const picks=featured.length>=11?featured.slice(3):featured.slice(0,8);
  const shelves=shelvesWithCounts(products).filter(s=>s.count>0);
  const featuredNames=['Baseball','Football','Basketball','Other trading cards','Vintage & other finds'];
  const selected=[...shelves].sort((a,b)=>featuredNames.indexOf(a.name)-featuredNames.indexOf(b.name)).slice(0,5);
