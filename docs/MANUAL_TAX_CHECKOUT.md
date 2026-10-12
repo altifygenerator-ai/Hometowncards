@@ -14,10 +14,10 @@ The site calculates tax independently of Stripe Tax and requires no paid tax API
 
 ## Data freshness
 
-- `lib/server/arkansas-sst.ts` uses the **official 2026 Q4** file pair, validates the 6.5% Arkansas base rate, file structure and effective date, and caches results for 20 hours.
+- The **prebuild** step `scripts/compile-arkansas-sst.mjs` downloads the official 2026 Q4 files, verifies the statewide rate, decodes the large boundary ZIP, resolves tax jurisdictions and combines adjacent ZIP+4 ranges into a compact tax snapshot bundled with Next.js. Checkout reads the snapshot locally without downloading anything. Failed data compilation prevents a new production build.
 - On 2027-01-01, quotes intentionally stop until the quarter's source filenames and files have been updated and tested. No outdated rate is silently used.
 - Check current Arkansas files at https://www.streamlinedsalestax.org/ratesandboundry/Rates/ and https://www.streamlinedsalestax.org/ratesandboundry/Boundary/ before each quarter change. File naming is not guessed.
-- The GitHub Actions verifier fetches the official files and tests that they have the expected format. It must be green before activating payments.
+- GitHub Actions verifies the official files, builds the compact tax snapshot, then runs a production Next.js API test against a ZIP+4 present in the official boundary file. This must be green before enabling checkout.
 - This is ZIP/ZIP+4 **jurisdiction boundary data**, not street-level address validation or USPS deliverability verification; do not claim USPS address verification.
 
 ## Real-payment launch checklist
