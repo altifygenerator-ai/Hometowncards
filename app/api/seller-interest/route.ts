@@ -19,7 +19,7 @@ export async function POST(req:NextRequest){
   if(contact_name.length<2||!emailRe.test(email))throw new PortalError('Enter your name and a valid email.',400);
   const inventory_size=safeTerm(body.inventorySize,50);
   const currently_selling=safeTerm(body.currentlySelling,120);
-  const seller_plan_interest=safeTerm(body.planInterest,20);
+  const seller_plan_interest='undecided';
   if(!['payg','starter','undecided'].includes(seller_plan_interest))throw new PortalError('Choose a valid seller plan.',400);
   const shop_name=safeTerm(body.shopName,120);
   const location=safeTerm(body.location,120);

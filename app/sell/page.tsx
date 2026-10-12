@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {SellerInterestForm} from '@/components/seller-interest-form';
-export const metadata={title:'Interested in Selling Cards? | Hometown Card Shop',description:'Have a collection of sports or trading cards to sell? Let Hometown Card Shop know you might be interested in selling here someday.'};
+export const metadata={title:'Interested in Selling Cards? | Hometown Card Shop',description:'Have a collection of sports or trading cards to sell? Let Hometown Card Shop know you might be interested in selling here someday.',robots:{index:false,follow:true}};
 export default function SellPage(){return <><section className="inner-hero"><div className="shell">
  <span className="kicker">JUST GAUGING INTEREST</span>
  <h1>Interested in selling cards here?</h1>
