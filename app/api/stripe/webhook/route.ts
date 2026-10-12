@@ -7,7 +7,36 @@ export async function POST(req:NextRequest){
  let event;
  try{event=verifyStripeWebhook(await req.text(),req.headers.get('stripe-signature'))}
  catch{return NextResponse.json({error:'Invalid signature'},{status:400})}
- const types=['checkout.session.completed','checkout.session.expired',
+ // Seller subscriptions are Stripe Billing payments to the platform, NOT Connect transfers.
+ if(['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted'].includes(event.type)){
+  const sub=event.data?.object as unknown as {
+   id?:string;customer?:string|{id?:string};status?:string;
+   current_period_end?:number;cancel_at_period_end?:boolean;
+   metadata?:Record<string,string>;
+   items?:{data?:Array<{price?:{id?:string};current_period_end?:number}>};
+  };
+  const sellerId=sub?.metadata?.seller_id||'';
+  const priceId=sub?.items?.data?.[0]?.price?.id||'';
+  const customer=typeof sub?.customer==='string'?sub.customer:sub?.customer?.id||'';
+  // Never infer eligibility from an arbitrary checkout session or email.
+  if(!/^[0-9a-f-]{36}$/i.test(sellerId)||!sub?.id||!customer||!priceId)return NextResponse.json({received:true,ignored:true});
+  try{
+   const result=await checkoutRpc<string>('hcs_apply_seller_membership_event',{
+    p_event_id:event.id,p_event_created:Math.max(0,Math.floor((event as unknown as {created?:number}).created||0)),
+    p_event_type:event.type,p_subscription_id:sub.id,p_customer_id:customer,
+    p_price_id:priceId,p_status:event.type==='customer.subscription.deleted'?'canceled':(sub.status||''),
+    p_period_end:sub.items?.data?.[0]?.current_period_end??sub.current_period_end??0,
+    p_cancel_at_period_end:Boolean(sub.cancel_at_period_end),p_seller_id:sellerId
+   });
+   if(result==='recorded'){
+    try{await sendShopAlert('seller_application','Seller membership updated',
+     'Stripe Billing event '+event.type+' updated seller membership '+sellerId+'.')}catch(e){console.error('Membership notification failed',e)}
+   }
+   return NextResponse.json({received:true});
+  }catch(e){console.error('Seller membership webhook failed',event.id,e);
+   return NextResponse.json({error:'Unable to save seller billing state'},{status:500});}
+ }
+  const types=['checkout.session.completed','checkout.session.expired',
   'checkout.session.async_payment_succeeded','checkout.session.async_payment_failed'];
  if(!types.includes(event.type))return NextResponse.json({received:true,ignored:true});
  const s=event.data?.object;

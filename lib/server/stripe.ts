@@ -18,7 +18,7 @@ export async function assertExpectedStripeAccount(){
  if(account.id!==expected||!account.charges_enabled)
   throw new PortalError('This Stripe account is not ready to accept payments.',503);
 }
-export async function stripePost(path:string,fields:URLSearchParams,idempotencyKey?:string):Promise<StripeCheckoutSession>{
+export async function stripePost<T=StripeCheckoutSession>(path:string,fields:URLSearchParams,idempotencyKey?:string):Promise<T>{
  const secret=process.env.STRIPE_SECRET_KEY;
  if(!secret)throw new PortalError('Payments are not configured yet.',503);
  const res=await fetch('https://api.stripe.com/v1/'+path,{method:'POST',headers:{
@@ -29,7 +29,7 @@ export async function stripePost(path:string,fields:URLSearchParams,idempotencyK
  const data=await res.json();
  if(!res.ok){console.error('Stripe request failed',res.status,data?.error?.type,data?.error?.code);
   throw new PortalError('We could not start your secure checkout. Please retry.',503);}
- return data as StripeCheckoutSession;
+ return data as T;
 }
 export function verifyStripeWebhook(raw:string,signature:string|null):StripeEvent{
  const secret=process.env.STRIPE_WEBHOOK_SECRET;

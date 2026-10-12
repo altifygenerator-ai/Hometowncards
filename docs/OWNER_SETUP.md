@@ -79,3 +79,15 @@ until seller payments, tax, refunds, holds and disputes are tested.
 - Stripe merchant identity is pinned to `acct_1UPWHsDy1ZySXGQN` via `STRIPE_EXPECTED_ACCOUNT_ID`; checkout refuses an API key belonging to any other Stripe account.
 - Live event destination `we_1UPWRYDy1ZySXGQNMy9v6Ivt` is configured for https://hometowncardshop.vercel.app/api/stripe/webhook and `STRIPE_WEBHOOK_SECRET` has been saved in Vercel Production.
 - Do not create a second webhook destination. No real charges were made.
+
+## Seller membership monetization
+- Default approved outside seller: 2% platform commission on merchandise subtotal only (exclude shipping and sales tax).
+- Starter Member: $5.99/month, Stripe Billing price `price_1UPWydDy1ZySXGQNAUMz6MQh`, 0% marketplace sales commission while subscription is active and paid through its current period end.
+- Founding Hometown Card Shop seller: permanent 0% house exemption; no subscription.
+- Pricing policies and fee snapshots: `supabase/seller-pricing.sql`; seller billing ownership binding: `supabase/seller-billing-customers.sql` (applied).
+- Membership lifecycle via verified `customer.subscription.created/updated/deleted` webhooks, not a client-submitted paid flag.
+- Seller records cannot be cross-connected to another Stripe billing customer ID.
+- Signup flag `SELLER_MEMBERSHIP_SIGNUPS_ENABLED=false` and Stripe Billing automatic-tax readiness `STRIPE_MEMBERSHIP_TAX_READY=false` until Connect, terms and tax setup complete.
+- Use seller-specific Billing portal sessions for cancellation/payment method changes when enabled.
+- Seller plan affects NEW order fee snapshots. Past sales are not repriced after cancellation.
+- Stripe processing fees and Billing fees are additional; 2% of $299.50 equals $5.99 before payment fees.
