@@ -189,3 +189,5 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .cart-shipping-choice input{accent-color:#1579c9}
 .cart-shipping-choice span{display:grid;gap:3px;flex:1;min-width:0}.cart-shipping-choice span small{color:#596d83;font-size:11px;line-height:1.45}
 .cart-shipping-total{font-size:13px;margin:5px 0 10px;color:#233f59}.cart-shipping-total strong{font-size:16px}
+
+.product-dealer-link{display:inline-block;margin:7px 0 0;font-size:11px;font-weight:700;color:#1b5c9b}.product-dealer-link:hover{text-decoration:underline;text-underline-offset:2px}
