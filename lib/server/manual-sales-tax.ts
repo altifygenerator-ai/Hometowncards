@@ -1,15 +1,13 @@
 import {PortalError} from '@/lib/server/portal';
-
+import {resolveArkansasSalesTax} from '@/lib/server/arkansas-sst';
 export type CheckoutAddress={
  name:string;line1:string;line2:string;city:string;state:string;postalCode:string;country:'US'
 };
 export type ManualTaxQuote={
  taxCents:number;rate:number;taxableCents:number;
- source:'ziptax-address-v60'|'outside-arkansas-not-registered';
+ source:'ar-sst-2026q4'|'outside-arkansas-not-registered';
  description:string;
 };
-
-/** Buyer address is collected on our site; Stripe only collects payment/billing details. */
 export function parseCheckoutAddress(value:unknown):CheckoutAddress{
  if(!value||typeof value!=='object'||Array.isArray(value))throw new PortalError('Enter a complete shipping address.',400);
  const input=value as Record<string,unknown>;
@@ -30,44 +28,21 @@ function validateAmounts(subtotalCents:number,shippingCents:number){
     !Number.isSafeInteger(shippingCents)||shippingCents<0||shippingCents>100_000)
   throw new PortalError('Invalid merchandise or shipping amount.',400);
 }
-/** The tax quote is recomputed on the server using RESERVED DB prices before charging. */
 export async function quoteManualSalesTax(address:CheckoutAddress,subtotalCents:number,shippingCents:number):Promise<ManualTaxQuote>{
  validateAmounts(subtotalCents,shippingCents);
  const taxableCents=subtotalCents+shippingCents;
+ // Founder-only: no out-of-state nexus currently declared. Review if sales cross remote thresholds.
  if(address.state!=='AR')return {taxCents:0,rate:0,taxableCents,
-  source:'outside-arkansas-not-registered',description:'No Arkansas sales tax applies to this delivery address.'};
- const key=process.env.ZIPTAX_API_KEY;
- if(!key)throw new PortalError('Arkansas address-based sales-tax lookup is not configured yet.',503);
- const lookup=new URL('https://api.zip-tax.com/request/v60');
- lookup.searchParams.set('address',[address.line1,address.line2,address.city,address.state,address.postalCode].filter(Boolean).join(', '));
- let result:{
-  metadata?:{response?:{code?:number}};
-  taxSummaries?:Array<{taxType?:string;rate?:number}>;
-  addressDetail?:{normalizedAddress?:string}
- };
- try{
-  const response=await fetch(lookup,{headers:{'X-API-KEY':key},cache:'no-store',signal:AbortSignal.timeout(8000)});
-  if(!response.ok)throw new Error('Tax lookup HTTP '+response.status);
-  result=await response.json();
- }catch{
-  throw new PortalError('Unable to verify the delivery-address tax rate. Please try again.',503);
- }
- const taxRate=result.taxSummaries?.find(x=>x.taxType==='SALES_TAX')?.rate;
- if(result.metadata?.response?.code!==100||typeof taxRate!=='number'||!Number.isFinite(taxRate)||
-  taxRate<0.065||taxRate>0.16)
-  throw new PortalError('Could not verify the correct Arkansas city and county sales taxes for this address.',422);
- const normalized=result.addressDetail?.normalizedAddress||'';
- // A geocoded address that resolves to a different state must not be taxed using Arkansas rates.
- if(!new RegExp('(?:,|\\s)AR(?:\\s|,|$)','i').test(normalized)||
-    !normalized.includes(address.postalCode.slice(0,5)))
-  throw new PortalError('Tax lookup could not confirm the Arkansas delivery address. Please correct the address.',422);
+  source:'outside-arkansas-not-registered',description:'No Arkansas sales tax applies to deliveries outside Arkansas.'};
+ const result=await resolveArkansasSalesTax(address.postalCode);
  return {
-  taxCents:Math.round(taxableCents*taxRate),rate:taxRate,taxableCents,
-  source:'ziptax-address-v60',description:'Arkansas state, county and applicable city sales tax'
+  taxCents:Math.round(taxableCents*result.rate),rate:result.rate,taxableCents,
+  source:result.source,
+  description:'Arkansas state, county and applicable city sales tax ('+result.basis+')'
  };
 }
-/** A state sales tax permit is an actual registration, not a Stripe Tax feature flag. */
+/** A tax permit and a rate lookup are independent requirements. Never invent a permit. */
 export function assertManualTaxCollectionReady(address:CheckoutAddress){
  if(address.state==='AR'&&process.env.ARKANSAS_SALES_TAX_REGISTERED!=='true')
-  throw new PortalError('Arkansas sales-tax registration must be completed before paid checkout for Arkansas deliveries.',503);
+  throw new PortalError('Arkansas sales-tax registration is required before collecting sales tax on paid orders.',503);
 }
