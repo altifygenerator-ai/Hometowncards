@@ -2,6 +2,29 @@
 
 ## What works after production OAuth setup
 
+### Only import trading cards
+
+The eBay importer now uses eBay's own primary **CategoryID**, not guesses from an item title.
+It imports physical sports trading card singles, card lots, sets and sealed packs; non-sport
+trading cards in those forms; and CCG singles, mixed lots, sets and packs. The allowlist
+is maintained in `lib/ebay-card-categories.ts`, with a mirrored server-side check in
+`hcs_reconcile_ebay_cards_page`. It excludes books, comics, video games, consoles, controllers,
+cameras, instruments, coins and card-storage accessories.
+
+Each full **Sync cards & hide non-card imports** pass checks existing eBay-derived site products
+against the active eBay listing category. It pauses an unrelated imported product in Hometown
+Card Shop, but **does not end, delete or modify its eBay listing**. Manual and CSV products are
+never affected. Listings without a valid eBay primary category are not newly imported or
+automatically hidden; the dashboard reports these as "Unclassified" for review.
+
+The first time after this release, run a **full** listing sync in the shopkeeper dashboard
+to revisit every eBay page. Previously imported non-card products are only automatically
+hidden once their eBay listing category has been confirmed; a few obviously unrelated
+website imports were hidden directly. Do not manually delete other cards to re-run this.
+Any legitimate trading card previously manually paused remains paused for safety until you
+unpause it.
+
+
 Every approved seller can use Hometown Card Shop's existing **manual products** and **CSV import** with no eBay account. eBay is optional and seller-specific. Marketplace checkout for outside dealers is **not** being enabled by this integration; Stripe Connect marketplace checkout is separate.
 
 Connected eBay sellers can:
