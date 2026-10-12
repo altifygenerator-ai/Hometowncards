@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {PortalError} from '@/lib/server/portal';
 import {checkoutRpc} from '@/lib/server/checkout-db';
 import {stripePost,assertExpectedStripeAccount} from '@/lib/server/stripe';
-import {parseCheckoutAddress,quoteManualSalesTax,assertManualTaxCollectionReady} from '@/lib/server/manual-sales-tax';
+import {parseCheckoutAddress,quoteManualSalesTax} from '@/lib/server/manual-sales-tax';
 import {verifyTurnstile} from '@/lib/server/turnstile';
 export const runtime='nodejs';
 export const maxDuration=60;
@@ -29,7 +29,6 @@ export async function POST(req:NextRequest){
    seen.add(x.id);return {id:x.id,quantity:x.quantity};
   });
   const address=parseCheckoutAddress(body.address);
-  assertManualTaxCollectionReady(address);
   await verifyTurnstile(body.turnstileToken,'checkout',req);
   await assertExpectedStripeAccount();
 
