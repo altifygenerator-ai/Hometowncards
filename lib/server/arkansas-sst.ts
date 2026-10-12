@@ -6,7 +6,6 @@ import {PortalError} from '@/lib/server/portal';
  * SST publishes new quarterly files. File names must be audited and updated each quarter.
  * Fail closed rather than guessing when the quarter advances or files are unavailable.
  */
-const quarter='2026q4';
 const starts='20261001', ends='20261231';
 const rateUrl='https://www.streamlinedsalestax.org/ratesandboundry/Rates/ARR2026Q4AUG28.csv';
 const boundaryUrl='https://www.streamlinedsalestax.org/ratesandboundry/Boundary/ARB2026Q4SEP17.zip';
@@ -34,7 +33,7 @@ function zipContents(buf:Buffer):Buffer[]{
   const nameLen=buf.readUInt16LE(pos+28),extraLen=buf.readUInt16LE(pos+30),commentLen=buf.readUInt16LE(pos+32);
   const local=buf.readUInt32LE(pos+42),name=buf.toString('utf8',pos+46,pos+46+nameLen);
   pos+=46+nameLen+extraLen+commentLen;
-  if(!/\.csv$/i.test(name)||name.includes('..')||name.includes('/'))continue;
+  if(!/\.(csv|txt)$/i.test(name)||name.split('/').includes('..'))continue;
   total+=size;if(total>300_000_000)throw Error('Boundary files too large');
   if(buf.readUInt32LE(local)!==0x04034b50)throw Error('Invalid local ZIP entry');
   const start=local+30+buf.readUInt16LE(local+26)+buf.readUInt16LE(local+28);
@@ -61,7 +60,7 @@ function validDate(start:string,end:string,at:string){
 function loadRates(csv:string,date:string){
  const map=new Map<string,number>();let count=0;
  for(const line of csv.split(/\r?\n/)){
-  const p=line.trim().split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+  const p=line.trim().replace(/^\uFEFF/,'').split(',').map(v=>v.trim().replace(/^"|"$/g,''));
   if(p.length<9||p[0]!=='05'||!validDate(p[7],p[8],date))continue;
   const type=p[1],code=p[2],rate=Number(p[3]);
   if(!/^\d\d$/.test(type)||!code||!Number.isFinite(rate)||rate<0||rate>0.2)throw Error('Malformed Arkansas tax rate');
