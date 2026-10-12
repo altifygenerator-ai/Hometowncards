@@ -50,12 +50,15 @@ export async function POST(req:NextRequest){
    add(`line_items[${i}][price_data][product_data][name]`,item.title.slice(0,120));
    add(`line_items[${i}][quantity]`,item.quantity);
   });
-  const k=reserved.items.length;
+  // Use a real shipping rate rather than classifying postage as a tangible product.
+  // Stripe Tax applies destination-specific treatment to shipping (txcd_92010001).
   if(reserved.shipping_cents>0){
-  add(`line_items[${k}][price_data][currency]`,'usd');
-  add(`line_items[${k}][price_data][unit_amount]`,reserved.shipping_cents);
-  add(`line_items[${k}][price_data][product_data][name]`,reserved.shipping_service||'Shipping');
-  add(`line_items[${k}][quantity]`,1);
+   add('shipping_options[0][shipping_rate_data][type]','fixed_amount');
+   add('shipping_options[0][shipping_rate_data][display_name]',reserved.shipping_service||'Shipping');
+   add('shipping_options[0][shipping_rate_data][fixed_amount][currency]','usd');
+   add('shipping_options[0][shipping_rate_data][fixed_amount][amount]',reserved.shipping_cents);
+   add('shipping_options[0][shipping_rate_data][tax_behavior]','exclusive');
+   add('shipping_options[0][shipping_rate_data][tax_code]','txcd_92010001');
   }
   const session=await stripePost('checkout/sessions',params,'hcs-session-'+orderId);
   if(!session.id||!session.url||!session.url.startsWith('https://checkout.stripe.com/'))
