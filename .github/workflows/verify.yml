@@ -19,6 +19,8 @@ jobs:
         run: node scripts/test-card-pricing.mjs
       - name: Stripe Checkout expiration safeguards
         run: node scripts/test-stripe-checkout-timing.mjs
+      - name: Optional eBay seller sync security safeguards
+        run: node scripts/test-ebay-integration-guards.mjs
       - name: Next.js build
         run: npm run build
         env:
