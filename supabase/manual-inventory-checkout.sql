@@ -158,7 +158,7 @@ begin
  values(v_order,v_seller,v_profile_id,v_bought,v_bonus,v_best_weight,v_ship,v_service,v_best_tracked,v_best_coverage);
  return jsonb_build_object('order_id',v_order,'items',v_lines,'shipping_cents',v_ship,'subtotal_cents',v_subtotal,
   'bonus_cards',v_bonus,'total_cents',v_total,'shipping_service',v_service,'expires_unix',extract(epoch from v_expiry)::bigint);
-end;$function$
+end;$function$;
 
 revoke execute on function public.hcs_begin_checkout(jsonb,text,uuid) from public,anon,authenticated;
 grant execute on function public.hcs_begin_checkout(jsonb,text,uuid) to service_role;
