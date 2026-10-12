@@ -1,31 +1,43 @@
+/* Cart status stays in normal document flow, then sticks at the top.
+   Unlike the previous floating card, it never obscures products or controls. */
 .sticky-cart-rail{
- position:fixed;z-index:65;right:max(16px,calc((100vw - 1190px)/2));bottom:16px;
- width:min(465px,calc(100vw - 32px));display:flex;gap:12px;align-items:center;
- padding:12px;background:#fffcf6;border:1px solid #bfcfe0;border-radius:9px;
- box-shadow:0 10px 34px #071b3552;color:#132139;
+ position:sticky;top:0;z-index:35;width:100%;min-height:54px;
+ display:flex;align-items:center;gap:14px;
+ padding:7px max(16px,calc((100vw - 1190px)/2));
+ background:#fffcf6;border-bottom:1px solid #d4dfeb;
+ box-shadow:0 2px 8px #071b3514;color:#132139;
 }
-.sticky-cart-preview{width:51px;height:64px;flex-shrink:0;border:1px solid #dae2ea;border-radius:4px;background:#fff;display:grid;place-items:center;overflow:hidden;color:#176fc1}
+.sticky-cart-preview{
+ width:31px;height:38px;flex-shrink:0;border:1px solid #dae2ea;
+ border-radius:3px;background:#fff;display:grid;place-items:center;overflow:hidden;color:#176fc1;
+}
 .sticky-cart-preview img{width:100%;height:100%;object-fit:contain}
-.sticky-cart-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
-.sticky-cart-info>strong{font-size:13px;font-weight:900}
-.sticky-cart-latest{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#607085}
-.sticky-cart-subtotal{font-size:17px;font-weight:900;color:#0b3d67;white-space:nowrap}
-.sticky-cart-subtotal small{font-size:10px;color:#657588;font-weight:500}
-.sticky-cart-action{min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;padding:10px 13px;background:#137ed2;color:#fff;border-radius:5px;font-size:12px;font-weight:900}
+.sticky-cart-info{min-width:0;flex:1;display:flex;align-items:center;gap:18px}
+.sticky-cart-info>strong{font-size:12px;font-weight:900;white-space:nowrap}
+.sticky-cart-latest{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#607085}
+.sticky-cart-subtotal{font-size:15px;font-weight:900;color:#0b3d67;white-space:nowrap}
+.sticky-cart-subtotal small{font-size:10px;color:#657588;font-weight:500;margin-left:3px}
+.sticky-cart-action{
+ min-height:35px;display:inline-flex;align-items:center;justify-content:center;
+ gap:7px;white-space:nowrap;padding:7px 12px;background:#137ed2;
+ color:#fff;border-radius:4px;font-size:12px;font-weight:900;
+}
 .sticky-cart-action:hover,.sticky-cart-action:focus-visible{background:#0964b0}
 .sticky-cart-action:focus-visible{outline:3px solid #f0b93b;outline-offset:2px}
-.sticky-cart-spacer{display:none}
-#cart-checkout{scroll-margin-top:14px}
-@media(max-width:680px){
- .sticky-cart-rail{left:0;right:0;bottom:0;width:100%;border-radius:0;border-left:0;border-right:0;border-bottom:0;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -6px 24px #071b3533}
- .sticky-cart-preview{width:37px;height:49px}
- .sticky-cart-info>strong{font-size:12px}
- .sticky-cart-latest{display:none}
- .sticky-cart-subtotal{font-size:15px}
- .sticky-cart-subtotal small{display:block;font-size:9px}
- .sticky-cart-action{padding:10px;min-height:43px;font-size:11px}
- .sticky-cart-spacer{display:block;height:calc(85px + env(safe-area-inset-bottom))}
+/* Keep the cart's sticky order summary below the cart strip. */
+.cart-summary{top:75px}
+#cart-checkout{scroll-margin-top:75px}
+@media(max-width:760px){
+ .sticky-cart-rail{min-height:47px;gap:9px;padding:7px 16px}
+ .sticky-cart-preview,.sticky-cart-latest{display:none}
+ .sticky-cart-info{flex-wrap:wrap;gap:3px 11px}
+ .sticky-cart-info>strong{font-size:11px}
+ .sticky-cart-subtotal{font-size:13px}
+ .sticky-cart-subtotal small{display:none}
+ .sticky-cart-action{min-height:33px;padding:7px 9px;font-size:11px}
 }
 @media(max-width:375px){
- .sticky-cart-preview{display:none}
+ .sticky-cart-rail{gap:6px;padding:6px 10px}
+ .sticky-cart-info{gap:2px 7px}
+ .sticky-cart-action{gap:3px;padding:7px}
 }
