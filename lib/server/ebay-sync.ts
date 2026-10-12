@@ -91,14 +91,12 @@ export async function syncEbayListings(sellerId:string,access:string,conn:Conn){
   if(expected!==null&&expected!==result.total)throw new PortalError('eBay inventory changed during import; start a fresh sync.',409);
   if(!starting)starting=now();
   if(expected===null)expected=result.total;
-  for(const item of result.items){
-   const status=await rpc<string>('hcs_apply_ebay_listing',{
-    p_seller:sellerId,p_listing:item.id,p_sku:item.sku,p_title:item.title,
-    p_price:item.price,p_quantity:item.quantity,p_category:item.category,
-    p_sport:item.sport,p_image:item.image,p_back:item.back,p_synced_at:now()
+  if(result.items.length){
+   const sums=await rpc<{created:number;updated:number;review:number}>('hcs_import_ebay_listing_page',{
+    p_seller:sellerId,p_items:result.items,p_synced_at:now()
    });
-   if(status==='conflict')review++;else imported++;
-   processed++;
+   imported+=sums.created+sums.updated;
+   review+=sums.review;processed+=result.items.length;
   }
   page++;
   await updateConnection(sellerId,{listing_page:page,listing_total:expected,
