@@ -76,7 +76,7 @@ export function PriceResearchPanel({id,sellerId,sitePriceCents,onPriceApplied}:{
   </details>}
   <h3>Planned pricing sources</h3>
   <div className="hcs-pricing-sources">{data?.sources.map(x=><div key={x.id}>
-   <div><strong>{x.name}</strong><small>{x.connection==='not_connected'?'Not connected':x.connection==='configured_but_disabled'?'Credentials present · disabled':'Credentials present · adapter pending'}</small></div>
+   <div><strong>{x.name}</strong><small>{x.connection==='manual_available'?'Manual entry available':x.connection==='not_connected'?'Not connected':x.connection==='configured_but_disabled'?'Credentials present · disabled':'Credentials present · integration required'}</small></div>
    <p>{x.note}</p>
    <a href={x.homepage} target="_blank" rel="noopener noreferrer">Source information ↗</a>
   </div>)}</div>

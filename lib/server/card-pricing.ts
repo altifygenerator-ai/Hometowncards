@@ -3,7 +3,7 @@
  * Each provider adapter must independently verify its sale data and legal API access.
  */
 export type ProviderId='ebay_sold'|'sportscardspro'|'collx'|'cardmarket'|'openai_web'|'manual'|'other';
-export type PriceSource={id:ProviderId;name:string;kind:'verified-sales-candidate'|'price-guide'|'research-lead'|'manual';connection:'not_connected'|'configured_but_disabled'|'ready_for_adapter';note:string;homepage:string};
+export type PriceSource={id:ProviderId;name:string;kind:'verified-sales-candidate'|'price-guide'|'research-lead'|'manual';connection:'not_connected'|'configured_but_disabled'|'credential_present'|'manual_available';note:string;homepage:string};
 export type Comparable={
  id:string;provider:ProviderId;observed_kind:'sold'|'asking'|'guide';
  evidence_status:'provider_verified'|'reported'|'unverified';
@@ -18,14 +18,14 @@ function safeDate(s:string|null){const t=s?Date.parse(s):NaN;return Number.isFin
 export function getPricingSources():PriceSource[]{
  const enabled=process.env.CARD_PRICING_LIVE_LOOKUPS_ENABLED==='true';
  const status=(key:string):PriceSource['connection']=>process.env[key]?
-    enabled?'ready_for_adapter':'configured_but_disabled':'not_connected';
+    enabled?'credential_present':'configured_but_disabled':'not_connected';
  return [
   {id:'ebay_sold',name:'eBay sold research',kind:'verified-sales-candidate',connection:status('EBAY_MARKETPLACE_INSIGHTS_TOKEN'),homepage:'https://www.ebay.com/sh/research',note:'Verified sold-price API requires separate approved access. eBay seller OAuth alone is not enough.'},
   {id:'sportscardspro',name:'SportsCardsPro',kind:'price-guide',connection:status('SPORTSCARDSPRO_API_KEY'),homepage:'https://www.sportscardspro.com/',note:'Licensed pricing API/access required. Guide values are not individual confirmed sales.'},
   {id:'collx',name:'CollX',kind:'price-guide',connection:status('COLLX_DATA_ACCESS_TOKEN'),homepage:'https://www.collx.app/',note:'Requires authorized data integration; no public third-party pricing API assumed.'},
   {id:'cardmarket',name:'Cardmarket',kind:'price-guide',connection:status('CARDMARKET_API_KEY'),homepage:'https://www.cardmarket.com/',note:'Provider restrictions and region-specific market. Guide prices must remain separate from confirmed sales.'},
   {id:'openai_web',name:'OpenAI web research',kind:'research-lead',connection:status('OPENAI_API_KEY'),homepage:'https://platform.openai.com/docs/guides/tools-web-search',note:'Web search citations can surface leads, but search result snippets are not verified transaction receipts.'},
-  {id:'manual',name:'Seller-entered comparisons',kind:'manual',connection:'not_connected',homepage:'https://www.ebay.com/',note:'Manually entered evidence stays unverified until independently confirmed.'}
+  {id:'manual',name:'Seller-entered comparisons',kind:'manual',connection:'manual_available',homepage:'https://www.ebay.com/',note:'Manually entered evidence stays unverified until independently confirmed.'}
  ];
 }
 function percentile(sorted:number[],fraction:number){
