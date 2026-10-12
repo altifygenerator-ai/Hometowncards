@@ -116,3 +116,16 @@ until seller payments, tax, refunds, holds and disputes are tested.
 - Dealer portal: export `/api/portal/orders/shipping-export` CSV of PAID / PACKING orders with addresses, seller-specific parcel estimates, service and shipping charge.
 - Label costs are not automatically purchased or tracked in the app; users must map CSV columns, confirm addresses/weights and paste carrier/tracking in the order dashboard.
 - Seller-specific shipping templates are inactive pending real postage charges and packing weight checks.
+
+## Real card listing and picture management (Oct 2026)
+- Owner and dealer managers: Inventory → card photo, title, or "Edit / photos" → `/admin/listings/{product-uuid}`. Seller ownership is verified on every request.
+- Create a direct listing via "Add card directly to shop" → `/admin/listings/new`; this uses `source='manual'`, no eBay connection, and stays hidden from shoppers until reviewed.
+- Photos: Supabase Storage public bucket `card-listing-photos`; upload authorization is server-only through existing verified Supabase Auth cookies and strict seller scoping. JPG, PNG, WebP only, max 7 MB, up to 10 image slots (front/back + eight extras).
+- Uploaded front/back photos are held in `products.manual_image_url` and `products.manual_back_image_url`; seller images table records storage keys; atomic SQL RPCs commit the pointer updates. eBay images remain as fallback.
+- Photo gallery on `/cards/{listing}`: thumbnails and accessible full-screen view. New images may take ~90 seconds to propagate through the catalog cache.
+- eBay sync preserves manual listing field overrides (`listing_overrides`) and does NOT overwrite seller-uploaded photo fields; eBay product quantity remains controlled by eBay.
+- Images are stored in Supabase and count toward Supabase storage/egress quotas. There is no paid image enhancement service.
+- Photo-review flags for missing images must be cleared by a shopkeeper after checking the uploaded front picture.
+- AI assistance is OFF by default. To enable, add server-only `OPENAI_API_KEY` and set BOTH `AI_CARD_IDENTIFICATION_ENABLED=true` and `NEXT_PUBLIC_AI_CARD_TOOLS_ENABLED=true` in Vercel, then redeploy. This is an optional paid OpenAI API usage, not included in ChatGPT.
+- AI sends the card's selected public front picture to the model, returns proposed identification fields, confidence and sold-comp search terms, stores an audit record, and caps use at 20 per shop/day. It never auto-publishes, authenticates autographs, grades a card, or invents/sets a market price.
+- Accurate AI-assisted pricing later requires actual recent SOLD transaction comparables matched on year, set, variant, condition, card number, grade and shipping; eBay seller OAuth alone does not automatically provide comprehensive sold-price access.
