@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" role="img" aria-labelledby="title">
+<title id="title">Hometown Card Shop sports cards and trading cards banner</title>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#07182c"/><stop offset=".5" stop-color="#164674"/><stop offset="1" stop-color="#07182c"/></linearGradient><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c62b3b"/><stop offset=".35" stop-color="#f7a848"/><stop offset="1" stop-color="#264a6b"/></linearGradient></defs>
+<rect width="1200" height="400" fill="url(#bg)"/><path d="M0 50H1200M0 360H1200" stroke="#ce2b38" stroke-width="11"/><path d="M0 61H1200M0 348H1200" stroke="#f7f1e4" stroke-width="3"/>
+<path d="M0 190L150 92L270 190L360 110L450 208L550 126L670 220L786 99L942 204L1100 101L1200 178V350H0Z" fill="#102b48" opacity=".62"/>
+<g opacity=".85" stroke="#f5e9d5" stroke-width="4">
+<rect x="45" y="62" width="210" height="275" rx="13" fill="#f8eede"/><rect x="60" y="77" width="180" height="241" fill="#0d2d53"/>
+<circle cx="150" cy="187" r="70" fill="#fff8ee" stroke="#c82334" stroke-width="8"/><path d="M130 120Q183 185 130 255M172 125Q115 190 174 248" fill="none" stroke="#c82334" stroke-dasharray="9 7" stroke-width="5"/>
+<rect x="946" y="62" width="210" height="275" rx="13" fill="#f8eede"/><rect x="961" y="77" width="180" height="241" fill="#122d4e"/><circle cx="1051" cy="185" r="76" fill="#e99b36" stroke="#122d4e"/><path d="M1051 109V262M976 185H1127M999 131Q1092 190 1111 242M1098 125Q1025 179 1011 243" stroke="#132841" stroke-width="7" fill="none"/>
+</g>
+<rect x="272" y="68" width="656" height="256" rx="18" fill="#07172b" stroke="#f7eee0" stroke-width="10"/>
+<rect x="282" y="77" width="635" height="235" rx="12" fill="none" stroke="#ce2739" stroke-width="5"/>
+<text x="600" y="172" fill="#fff8ea" stroke="#051428" stroke-width="8" paint-order="stroke" text-anchor="middle" textLength="590" lengthAdjust="spacingAndGlyphs" font-size="91" font-weight="900" font-family="Impact,'Arial Black',sans-serif">HOMETOWN</text>
+<path d="M321 193Q600 214 880 193L869 270Q600 287 333 270Z" fill="#c82335" stroke="#fff4df" stroke-width="5"/>
+<text x="600" y="255" text-anchor="middle" textLength="400" lengthAdjust="spacingAndGlyphs" font-size="68" font-family="Impact,'Arial Black',sans-serif" font-weight="900" fill="#fff9ef" stroke="#09182d" stroke-width="7" paint-order="stroke">CARD SHOP</text>
+<text x="600" y="298" text-anchor="middle" textLength="355" lengthAdjust="spacingAndGlyphs" font-size="21" font-family="Arial,sans-serif" letter-spacing="3" font-weight="800" fill="#ffe8bd">SPORTS &amp; TRADING CARDS</text>
+<text x="600" y="377" text-anchor="middle" font-family="Impact,'Arial Black',sans-serif" font-size="24" letter-spacing="10" fill="#fff7eb">BUY   ★   SELL   ★   TRADE</text>
+</svg>
