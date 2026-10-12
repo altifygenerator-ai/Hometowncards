@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import {searchProducts,sportsFor,getTeamOptions} from '@/lib/catalog';
 import type {SearchFilters} from '@/lib/catalog';
 import {getCatalog} from '@/lib/catalog-db';import {ProductCard} from '@/components/product-card';import {Icon} from '@/components/icons';
-export const metadata:Metadata={title:'Shop Sports Cards & Collectibles',description:'Find baseball, football, basketball and other trading cards. Filter by sport, team, year and price at Hometown Card Shop.'};
+export const metadata:Metadata={title:'Shop Sports Cards & Collectibles',description:'Find baseball, football, basketball and other trading cards. Filter by sport, team, year and price at Hometown Card Shop.',alternates:{canonical:'/shop'}};
 type Props={searchParams:Promise<{[key:string]:string|string[]|undefined}>};
 function first(p:string|string[]|undefined){return typeof p==='string'?p:''}
 export default async function Shop({searchParams}:Props){const p=await searchParams;const filters:SearchFilters={search:first(p.search),sport:first(p.sport),team:first(p.team),year:first(p.year),sort:first(p.sort),page:first(p.page),seller:first(p.seller)};
