@@ -15,8 +15,8 @@ export default function PrivacyPolicy(){
    <h1>Privacy Policy</h1>
    <p>What we collect, why we use it, and how to contact us.</p>
   </div></section>
-  <section className="shell editorial">
-   <div className="editorial-prose" style={{maxWidth:860}}>
+  <section className="shell" style={{padding:"52px 0 76px"}}>
+   <article className="editorial-prose" style={{maxWidth:860}}>
     <p><strong>Effective date:</strong> {effective}</p>
     <p>Hometown Card Shop operates from Amity, Arkansas, United States. This policy describes how our website at <a href="https://www.hometowncardshop.com">www.hometowncardshop.com</a> handles information about customers, shopkeepers, and sellers who optionally connect their eBay accounts.</p>
     <h2>Information we collect</h2>
@@ -42,7 +42,7 @@ export default function PrivacyPolicy(){
     <h2>Contact us</h2>
     <p>Questions or privacy requests? Email <a href="mailto:altifygenerator@gmail.com?subject=Hometown%20Card%20Shop%20Privacy">altifygenerator@gmail.com</a>. Hometown Card Shop is based in Amity, Arkansas, United States.</p>
     <p>For shipping and order questions, see our <Link href="/shipping">shipping and returns page</Link>.</p>
-   </div>
+   </article>
   </section>
  </>;
 }
