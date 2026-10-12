@@ -1,0 +1,23 @@
+name: Verify card shop build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: TypeScript check
+        run: npx tsc --noEmit --pretty false
+      - name: Next.js build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://www.hometowncardshop.com
+          NEXT_PUBLIC_STORE_LIVE: 'false'
+          NEXT_PUBLIC_CHECKOUT_ENABLED: 'false'
