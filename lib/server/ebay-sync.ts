@@ -124,7 +124,7 @@ export async function syncEbayListings(sellerId:string,access:string,conn:Conn){
 }
 function esc(s:string){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 type Outbox={id:string;source_item_id:string;sold_quantity:number;product_id:string};
-type Product={id:string;stock:number;status:string;manual_paused:boolean};
+type Product={id:string;stock:number;status:string;manual_paused:boolean;ebay_sync_excluded:boolean};
 async function checkListing(access:string,id:string){
  const root=await tradingCall<Record<string,unknown>>(access,'GetItem',
   '<ItemID>'+esc(id)+'</ItemID><DetailLevel>ReturnAll</DetailLevel>');
@@ -148,9 +148,10 @@ export async function syncEbayWriteback(sellerId:string,access:string){
  for(const row of pending)groups.set(row.source_item_id,[...(groups.get(row.source_item_id)||[]),row]);
  for(const [listing,rows] of groups){
   try{
-   const stockRows=await db<Product[]>('products?select=id,stock,status,manual_paused&seller_id=eq.'+
+   const stockRows=await db<Product[]>('products?select=id,stock,status,manual_paused,ebay_sync_excluded&seller_id=eq.'+
     sellerId+'&source=eq.ebay&source_item_id=eq.'+listing+'&limit=1');
    const p=stockRows[0];if(!p)throw new Error('Linked card no longer exists in inventory');
+   if(p.ebay_sync_excluded)throw new Error('Non-card listing: eBay writeback needs manual review.');
    const remote=await checkListing(access,listing);
    if(remote.remaining<0)throw new Error('Could not verify current eBay quantity');
    const totalSold=rows.reduce((a,b)=>a+b.sold_quantity,0);
