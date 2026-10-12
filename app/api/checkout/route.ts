@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {PortalError} from '@/lib/server/portal';
 import {checkoutRpc} from '@/lib/server/checkout-db';
-import {stripePost,assertExpectedStripeAccount} from '@/lib/server/stripe';
+import {stripePost,assertExpectedStripeAccount,assertArkansasSalesTaxReady} from '@/lib/server/stripe';
 import {verifyTurnstile} from '@/lib/server/turnstile';
 export const runtime='nodejs';
 type Line={id:string;quantity:number};
@@ -28,6 +28,7 @@ export async function POST(req:NextRequest){
   });
   await verifyTurnstile(body.turnstileToken,'checkout',req);
   await assertExpectedStripeAccount();
+  await assertArkansasSalesTaxReady();
   const reserved=await checkoutRpc<Reservation>('hcs_begin_checkout',{
    p_items:items,p_preferred_sport:body.bonusSport||'Mixed',p_shipping_profile_id:typeof body.shippingProfileId==='string'&&/^[a-f0-9-]{36}$/i.test(body.shippingProfileId)?body.shippingProfileId:null
   });orderId=reserved.order_id;
