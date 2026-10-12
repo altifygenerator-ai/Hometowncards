@@ -49,7 +49,10 @@ export async function POST(req:NextRequest){
   // Shipping address is collected and locked on our site BEFORE the tax quote.
   add('billing_address_collection','auto');
   add('automatic_tax[enabled]','false');
-  add('expires_at',Math.floor(Date.now()/1000)+30*60);
+  // Supabase reserves inventory for 45 minutes. Stripe requires >=30 minutes from its own receive-time:
+  // a 30-minute timestamp can expire BELOW Stripe's minimum during the network request.
+  // Give Stripe 40 minutes, leaving a 5-minute margin before the stock hold expires.
+  add('expires_at',Math.ceil(Date.now()/1000)+40*60);
   // Card supports major wallets where available. Do not enable delayed settlement methods.
   add('payment_method_types[0]','card');
   reserved.items.forEach((item,i)=>{
@@ -84,6 +87,6 @@ export async function POST(req:NextRequest){
   console.error('Checkout unavailable',err instanceof Error?err.message:err);
   if(sessionId){try{await stripePost('checkout/sessions/'+encodeURIComponent(sessionId)+'/expire',new URLSearchParams())}catch{}}
   if(orderId){try{await checkoutRpc('hcs_abort_unattached_checkout',{p_order:orderId})}catch{}}
-  return error(err instanceof PortalError&&err.code===400?err.message:'A card or shipping option is unavailable. Please check your cart.',err instanceof PortalError&&err.code===400?400:503);
+  return error(err instanceof PortalError?err.message:'We could not open secure payment. Please try again.',err instanceof PortalError?err.code:503);
  }
 }

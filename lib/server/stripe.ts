@@ -28,8 +28,15 @@ export async function stripePost<T=StripeCheckoutSession>(path:string,fields:URL
   ...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{})
  },body:fields.toString(),cache:'no-store'});
  const data=await res.json();
- if(!res.ok){console.error('Stripe request failed',res.status,data?.error?.type,data?.error?.code);
-  throw new PortalError('We could not start your secure checkout. Please retry.',503);}
+ if(!res.ok){
+  // Log Stripe's actionable parameter/message only on the server, never send raw Stripe errors to shoppers.
+  console.error('Stripe API rejected request',{
+   endpoint:path,status:res.status,type:data?.error?.type,code:data?.error?.code,
+   param:data?.error?.param,message:String(data?.error?.message||'').slice(0,350),
+   requestId:res.headers.get('request-id')
+  });
+  throw new PortalError('Stripe could not open secure payment. Please try again shortly.',503);
+ }
  return data as T;
 }
 export function verifyStripeWebhook(raw:string,signature:string|null,webhookSecret?:string):StripeEvent{
