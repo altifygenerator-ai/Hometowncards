@@ -1,16 +1,17 @@
 import {NextRequest} from 'next/server';
 import {authorized,db,failure,json,PortalError,safeTerm,audit,moneyCents} from '@/lib/server/portal';
-type Item={id:string;seller_id:string;source:string;stock:number;needs_review:boolean;image_url:string|null;back_image_url:string|null;manual_image_url:string|null;manual_back_image_url:string|null;listing_overrides:Record<string,unknown>};
+type Item={id:string;seller_id:string;source:string;stock:number;manual_paused:boolean;needs_review:boolean;image_url:string|null;back_image_url:string|null;manual_image_url:string|null;manual_back_image_url:string|null;listing_overrides:Record<string,unknown>};
 const uuid=/^[a-f0-9-]{36}$/i;
 async function own(sellerId:string,id:string){if(!uuid.test(id))throw new PortalError('Invalid product ID.',400);
- const rows=await db<Item[]>('products?select=id,seller_id,source,stock,needs_review,image_url,back_image_url,manual_image_url,manual_back_image_url,listing_overrides&seller_id=eq.'+sellerId+'&id=eq.'+id+'&limit=1');
+ const rows=await db<Item[]>('products?select=id,seller_id,source,stock,manual_paused,needs_review,image_url,back_image_url,manual_image_url,manual_back_image_url,listing_overrides&seller_id=eq.'+sellerId+'&id=eq.'+id+'&limit=1');
  if(!rows[0])throw new PortalError('Card not found in your shop.',404);return rows[0];}
 export async function GET(req:NextRequest,ctx:{params:Promise<{id:string}>}){
  try{const {sellerId}=await authorized(req);const {id}=await ctx.params;await own(sellerId,id);
  const [products,photos]=await Promise.all([
  db<Record<string,unknown>[]>('products?select=*&seller_id=eq.'+sellerId+'&id=eq.'+id+'&limit=1'),
  db<Array<{id:string;slot:string;public_url:string;created_at:string}>>('product_images?select=id,slot,public_url,created_at&seller_id=eq.'+sellerId+'&product_id=eq.'+id+'&order=slot.asc')]);
- return json({product:products[0],photos});
+ const settings=await db<Array<{manual_inventory_mode:boolean}>>('marketplace_settings?select=manual_inventory_mode&id=eq.true&limit=1');
+ return json({product:products[0],photos,manualInventoryMode:settings[0]?.manual_inventory_mode===true});
  }catch(e){return failure(e)}
 }
 export async function PATCH(req:NextRequest,ctx:{params:Promise<{id:string}>}){
@@ -32,9 +33,14 @@ export async function PATCH(req:NextRequest,ctx:{params:Promise<{id:string}>}){
   else{const price=Number(body.price_override_cents);if(!Number.isInteger(price)||price<1||price>100000000)throw new PortalError('Enter a valid site price in cents.');patch.price_override_cents=price;}
  }
  if(Object.prototype.hasOwnProperty.call(body,'stock')){
-  if(old.source==='ebay')throw new PortalError('eBay stock needs to be updated on eBay before syncing.',409);
+  if(old.source==='ebay'){
+   const settings=await db<Array<{manual_inventory_mode:boolean}>>('marketplace_settings?select=manual_inventory_mode&id=eq.true&limit=1');
+   if(!settings[0]?.manual_inventory_mode)throw new PortalError('eBay stock must be updated via eBay when live synchronization is enabled.',409);
+  }
   const stock=Number(body.stock);if(!Number.isInteger(stock)||stock<0||stock>100000)throw new PortalError('Invalid stock quantity.');
   patch.stock=stock;patch.status=stock?'published':'sold_out';
+  // Keep manually removed eBay listings hidden even if a later eBay import finds them.
+  if(old.source==='ebay'&&stock===0)patch.manual_paused=true;
  }
  if(Object.prototype.hasOwnProperty.call(body,'manual_paused'))patch.manual_paused=body.manual_paused===true;
  if(Object.prototype.hasOwnProperty.call(body,'needs_review')){
