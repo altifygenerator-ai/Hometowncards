@@ -13,6 +13,23 @@ Connected eBay sellers can:
 
 The founder's 3,000+ existing cards will **not** be deleted simply because eBay no longer returns an item in an active-list snapshot. Compare imported counts carefully, since some site cards may be independent inventory or previously imported in bulk. eBay listing migrations between legacy Trading and Inventory API require explicit API verification; any failed legacy revision is flagged for review rather than forcing a destructive update.
 
+## eBay Production keyset compliance — do this FIRST
+
+If the Production keyset says **Non Compliant** or **Your keyset is currently disabled**, eBay requires account deletion/closure notifications before it will activate your App ID. Because Hometown Card Shop stores linked seller data and inventory, the **not persisting eBay data** exemption does not apply.
+
+On eBay Developers > Application Keys > Production > **Alerts & Notifications** > Marketplace Account Deletion:
+
+1. Enter an alert email and save it.
+2. Choose **Edit** under Marketplace Account Deletion notification endpoint.
+3. Enter the exact URL **https://www.hometowncardshop.com/api/ebay/marketplace-account-deletion**.
+4. Enter the exact value of Vercel Production **EBAY_DELETION_VERIFICATION_TOKEN** (32-80 chars, only letters, digits, underscores, hyphens).
+5. Save. eBay will call that URL with `?challenge_code=` and the site returns the required SHA-256 response.
+6. Use eBay's **Send Test Notification**, and verify the subscription is active / keyset becomes compliant before connecting OAuth.
+
+When an eBay account deletion request is received, the site validates eBay's official `X-EBAY-SIGNATURE` using eBay's notification public-key API before removing any data. It removes stored refresh tokens and seller-account linkage and pauses eBay-linked products. Only legitimate Stripe orders needed for legal financial retention remain; the app does not import eBay buyer contact information.
+
+Official docs: https://developer.ebay.com/develop/guides/sell/marketplace-user-account-deletion
+
 ## Production app setup — mandatory before linking
 
 In the eBay Developers Program, obtain the **Production** (not Sandbox) application:
