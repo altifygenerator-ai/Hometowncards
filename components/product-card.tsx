@@ -7,7 +7,7 @@ export function ProductCard({product}:{product:Product}){
   </Link>
   <div className="product-details"><div className="product-kind">{product.sport}{product.team?' · '+product.team:''}</div>
    <Link href={'/cards/'+product.id} className="product-name">{product.title}</Link>
-   <Link href={'/sellers/'+product.sellerSlug} className="product-dealer-link">Sold by {product.sellerName} →</Link>
+   {product.sellerSlug!=='hometown-card-shop'&&<Link href={'/sellers/'+product.sellerSlug} className="product-dealer-link">Sold by {product.sellerName} →</Link>}
    <div className="product-bottom"><span className="price">{formatMoney(product.price)}</span><span className="item-status">{product.quantity===1?'1 available':product.quantity+' available'}</span></div>
    <AddToCart product={product}/>
   </div>
