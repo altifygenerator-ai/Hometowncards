@@ -118,13 +118,13 @@ async function getDataset(){
  }
 }
 function boundaryRate(b:Jurisdiction,rates:Map<string,number>):number{
- const state=rates.get('45:05'),county=b.county?rates.get('00:'+b.county):0;
- if(state===undefined||county===undefined)throw Error('Missing Arkansas state or county tax rate');
+ const state=rates.get('45:05'),county=b.county?(rates.get('00:'+b.county)??0):0;
+ if(state===undefined)throw Error('Missing Arkansas state sales tax rate');
  let total=state+county;
  if(b.place){
   const r=rates.get('01:'+b.place)??rates.get('02:'+b.place);
-  if(r===undefined)throw Error('Missing municipality rate '+b.place);
-  total+=r;
+  // A real incorporated place may have no city tax, in which case there is no rate row.
+  total+=r??0;
  }
  for(const d of b.districts){
   const r=rates.get(d.type+':'+d.code);
@@ -155,6 +155,7 @@ export async function resolveArkansasSalesTax(zip:string):Promise<OfficialArkans
  }
  if(rates.size!==1)throw new PortalError('This ZIP crosses several local tax districts. Please enter the full ZIP+4 for accurate tax.',422);
  const rate=[...rates][0];
- if(!ext&&records.length===0)throw new PortalError('Arkansas tax boundaries require a full ZIP+4 for this address.',422);
+ // The SST official Z-level fallback is valid when the file supplies no ZIP+4 boundary.
+ // For mixed local rates, callers must provide ZIP+4 rather than quietly using a low estimate.
  return {rate,source:'ar-sst-2026q4',basis:ext?'zip4':'zip5-unique',resolvedZip:zip};
 }
