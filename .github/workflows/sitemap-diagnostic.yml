@@ -32,3 +32,31 @@ jobs:
             done
             echo "::endgroup::"
           done
+
+      - name: Validate complete sitemap XML and URL scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --max-time 45 "https://www.hometowncardshop.com/sitemap.xml" -o /tmp/hcs-sitemap.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from urllib.parse import urlparse
+          from collections import Counter
+          f='/tmp/hcs-sitemap.xml'
+          root=ET.parse(f).getroot()
+          ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          assert root.tag=='{http://www.sitemaps.org/schemas/sitemap/0.9}urlset',root.tag
+          urls=[(x.text or '') for x in root.findall('.//s:loc',ns)]
+          assert len(urls)>0, 'No URLs'
+          invalid=[u for u in urls if urlparse(u).netloc!='www.hometowncardshop.com' or not urlparse(u).scheme=='https']
+          duplicates=[url for url,count in Counter(urls).items() if count>1]
+          print('XML_PARSE=OK')
+          print('URL_COUNT='+str(len(urls)))
+          print('OUT_OF_SCOPE='+str(len(invalid)))
+          print('DUPLICATES='+str(len(duplicates)))
+          print('XML_BYTES='+str(__import__('os').path.getsize(f)))
+          print('EXAMPLES='+repr(urls[:6]))
+          assert not invalid and not duplicates
+          assert len(urls)<=50000
+          assert __import__('os').path.getsize(f)<=50*1024*1024
+          PY
