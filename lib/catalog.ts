@@ -1,7 +1,7 @@
 import raw from './products.json';
 
 export type Product = {
-  id: string; title: string; price: number; quantity: number;
+  id: string; productId?:string; title: string; price: number; quantity: number;
   sport: string; team: string; player: string; year: string; set: string;
   number: string; image: string; backImage: string; sku: string;
   condition: string; ebayUrl: string; category: string;
