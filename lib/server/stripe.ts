@@ -31,8 +31,8 @@ export async function stripePost<T=StripeCheckoutSession>(path:string,fields:URL
   throw new PortalError('We could not start your secure checkout. Please retry.',503);}
  return data as T;
 }
-export function verifyStripeWebhook(raw:string,signature:string|null):StripeEvent{
- const secret=process.env.STRIPE_WEBHOOK_SECRET;
+export function verifyStripeWebhook(raw:string,signature:string|null,webhookSecret?:string):StripeEvent{
+ const secret=webhookSecret||process.env.STRIPE_WEBHOOK_SECRET;
  if(!secret||!signature)throw new PortalError('Webhook verification unavailable',400);
  const parts=signature.split(',').map(x=>x.trim().split('='));
  const stamp=parts.find(x=>x[0]==='t')?.[1],values=parts.filter(x=>x[0]==='v1').map(x=>x[1]);

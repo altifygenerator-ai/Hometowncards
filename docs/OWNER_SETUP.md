@@ -91,3 +91,12 @@ until seller payments, tax, refunds, holds and disputes are tested.
 - Use seller-specific Billing portal sessions for cancellation/payment method changes when enabled.
 - Seller plan affects NEW order fee snapshots. Past sales are not repriced after cancellation.
 - Stripe processing fees and Billing fees are additional; 2% of $299.50 equals $5.99 before payment fees.
+
+## Connect event infrastructure (future dealer expansion)
+- Dedicated signed Stripe connected-account webhook: `/api/stripe/connect/webhook`.
+- Separate `STRIPE_CONNECT_WEBHOOK_SECRET` (NEVER reuse the main checkout webhook secret).
+- Connected account event records and onboarding capability status persisted through the private `hcs_record_connect_event` SQL RPC.
+- Events monitored: `account.updated`, `account.application.deauthorized`, `charge.dispute.created`, `charge.refunded`, `payout.failed`.
+- Disputes and refunds are LOGGED for review, not automatically processed or paid out; this requires full financial reconciliation before onboarding other sellers.
+- No seller Connect account is created automatically from an interest submission.
+- `STRIPE_CONNECT_ONBOARDING_ENABLED=false` keeps onboarding disabled until payout liability, tax, support and refunds are implemented.
