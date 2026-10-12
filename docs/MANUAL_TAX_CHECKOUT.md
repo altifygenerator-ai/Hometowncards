@@ -1,44 +1,31 @@
-# Hometown Card Shop — Arkansas taxes calculated by the site
+# Hometown Card Shop — simple state-base sales-tax checkout
 
-## Founding seller checkout
+## Founding shop
 
-The site calculates tax independently of Stripe Tax and requires no paid tax API key.
+The site computes a **single statewide base rate** using the customer's two-letter delivery-state code. There are **no ZIP+4, city, county or district lookups**. A five-digit ZIP is still required for delivery, but does not affect the tax rate.
 
-- Arkansans: use official Q4 2026 Streamlined Sales Tax rate and boundary data, sourced from Arkansas's published jurisdiction data at https://www.streamlinedsalestax.org/ratesandboundry/.
-- Source CSV: https://www.streamlinedsalestax.org/ratesandboundry/Rates/ARR2026Q4AUG28.csv
-- Boundary ZIP: https://www.streamlinedsalestax.org/ratesandboundry/Boundary/ARB2026Q4SEP17.zip
-- ZIP+4 is used where needed to distinguish local tax boundaries. If a five-digit ZIP crosses multiple rates the checkout asks for the full nine-digit ZIP. The file contains the state, county, municipality and special district FIPS jurisdiction codes.
-- The site calculates the tax on physical cards and taxable shipping. Shopping-cart tax quotes are estimates; payment checkout recomputes from reserved inventory and server-configured shipping rates.
-- The checkout records the tax rate, origin, tax amount, delivery address and final amount in Supabase. Stripe Checkout sets `automatic_tax=false` and receives merchandise, shipping and local tax as separate line items. Verified webhooks settle only a matching total.
-- For customers outside Arkansas, no other state sales tax is collected until the business has established registration/nexus and added that jurisdiction. Re-evaluate this policy with professional advice as sales grow.
+- Arkansas deliveries (AR): **6.5%** statewide rate regardless of city or ZIP.
+- AK, DE, MT, NH and OR: **0% statewide** (Alaska cities can levy separate local taxes).
+- All other states and DC: base rates in `lib/server/state-base-tax.ts` and `public.state_sales_tax_rates`.
+- The shopping cart automatically shows cards, shipping, state tax and total whenever state or shipping choice changes. There's no tax button.
+- Server checkout recalculates actual tax using the reserved product and shipping prices, not trusting the browser's tax preview.
+- The saved order records the selected state/shipping address, rate, tax source `state-base-2026-07`, tax cents, and exact total. The Stripe session has `automatic_tax=false` and a separate fixed tax line. The signed webhook checks the total before marking an order paid.
+- For continuity with the prior system, the taxable base is **merchandise + shipping** for every state. Shipping taxability actually varies by state; this is a simplified model, not a legally complete calculator.
 
-## Data freshness
+## Rate source and maintenance
 
-- The **prebuild** step `scripts/compile-arkansas-sst.mjs` downloads the official 2026 Q4 files, verifies the statewide rate, decodes the large boundary ZIP, resolves tax jurisdictions and combines adjacent ZIP+4 ranges into a compact tax snapshot bundled with Next.js. Checkout reads the snapshot locally without downloading anything. Failed data compilation prevents a new production build.
-- On 2027-01-01, quotes intentionally stop until the quarter's source filenames and files have been updated and tested. No outdated rate is silently used.
-- Check current Arkansas files at https://www.streamlinedsalestax.org/ratesandboundry/Rates/ and https://www.streamlinedsalestax.org/ratesandboundry/Boundary/ before each quarter change. File naming is not guessed.
-- GitHub Actions verifies the official files, builds the compact tax snapshot, then runs a production Next.js API test against a ZIP+4 present in the official boundary file. This must be green before enabling checkout.
-- This is ZIP/ZIP+4 **jurisdiction boundary data**, not street-level address validation or USPS deliverability verification; do not claim USPS address verification.
+Statewide base rates as of July 1, 2026: https://taxfoundation.org/data/all/state/2026-sales-tax-rates-midyear/
 
-## Real-payment launch checklist
+They must be reviewed and updated when rates change. Some states have special rules and mandatory local add-ons (included in the published statewide base rate), gross receipts taxes, exemptions, and variable local rates **not represented here**.
 
-1. Obtain the relevant **Arkansas sales tax permit** from Arkansas DFA. Rate calculation does not substitute for sales-tax registration. Keep `ARKANSAS_SALES_TAX_REGISTERED` unset/false until the permit exists. https://atap.arkansas.gov/
-2. Verify the rate for actual example ZIP+4 delivery addresses against Arkansas DFA's lookup: https://www.dfa.arkansas.gov/office/taxes/excise-tax-administration/sales-use-tax/streamlined-tax-lookup/
-3. Confirm official source fetches, current quarter, backup provider behavior, availability, shipping price correctness, and required Turnstile/Supabase/Stripe webhook keys.
-4. Test a purchase, canceled payment, expiration, refund, shipping-export address, stock reservation and eBay pending-delisting records.
-5. Only then set Vercel `STRIPE_CHECKOUT_ENABLED=true`, `NEXT_PUBLIC_CHECKOUT_ENABLED=true`, `ARKANSAS_SALES_TAX_REGISTERED=true` (only if registration actually exists). Ensure `NEXT_PUBLIC_STORE_LIVE=true` and Supabase `marketplace_settings.checkout_enabled=true`, `marketplace_mode=false`.
-6. While eBay remains disconnected, manually remove cards sold through either channel to avoid overselling. eBay sale outbox records pending sales but **does not end listings automatically** until verified eBay OAuth/writeback is implemented.
+## Registration and liability
 
-## Future sellers & Stripe Connect
+Showing/charging a state tax rate is not proof of a permit or registration. A seller may need to collect different amounts, including local tax, or not collect tax at all in a particular state depending on actual nexus and registration. **Do not assume a blanket 50-state tax rate is automatically compliant or remittable.** Arkansas registration/remittance requirements remain relevant to the founder. https://atap.arkansas.gov/
 
-- Seller-specific tax configuration lives in `seller_tax_profiles` and is editable by authorized seller managers through **Taxes & Connect**.
-- Each seller can record states where it actually has sales-tax registration and declare its responsibilities. Connected sellers may request the `connect_stripe_tax` calculation mode once Stripe Connect charges are enabled, but this is **a configuration setting only**, not live Stripe Tax activation.
-- **Stripe Connect handles payment routing; it does not by itself calculate, collect, remit, or file sales taxes.** Connected-account Stripe Tax requires actual registration and a tax-enabled checkout/payment route on the correct connected account.
-- The platform's legal status as a marketplace facilitator and merchant of record must be assessed; a platform cannot automatically transfer all marketplace tax obligations to sellers through an agreement.
-- Mixed-seller carts need separate seller shipment/tax snapshots and a verified Stripe Connect payment/settlement model. Marketplace checkout remains disabled until tests for all these functions pass.
+## Payment and eBay reconciliation
 
-## Source links
+Hometown Card Shop payment switches (Vercel `NEXT_PUBLIC_CHECKOUT_ENABLED`, `STRIPE_CHECKOUT_ENABLED`, `NEXT_PUBLIC_STORE_LIVE`, and Supabase `marketplace_settings.checkout_enabled`) are managed independently of the rate table. Seller marketplace mode stays off unless the full Connect funds flow and tax responsibilities have been verified. Manual eBay listing reconciliation remains required until eBay OAuth and delisting writeback are connected.
 
-- Arkansas DFA Streamlined Tax Lookup: https://www.dfa.arkansas.gov/office/taxes/excise-tax-administration/sales-use-tax/streamlined-tax-lookup/
-- SST downloadable file index: https://www.streamlinedsalestax.org/Shared-Pages/rate-and-boundary-files
-- Arkansas Department of Finance & Administration: https://www.dfa.arkansas.gov/
+## Other sellers
+
+The `seller_tax_profiles` table and seller dashboard tax preferences remain separate. Stripe Connect by itself does **not** calculate, register, collect, remit, or file seller sales taxes. Marketplace checkout for outside sellers is not enabled by this change.
