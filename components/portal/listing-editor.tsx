@@ -4,8 +4,11 @@ import {useCallback,useEffect,useState} from 'react';
 type Listing={id:string;source:string;source_item_id:string;sku:string;title:string;description:string;price_cents:number;price_override_cents:number|null;stock:number;status:string;needs_review:boolean;manual_paused:boolean;sport:string;team:string;player:string;card_year:string;card_set:string;card_number:string;condition:string;category:string;inventory_location:string;seller_notes:string;image_url:string|null;back_image_url:string|null;manual_image_url:string|null;manual_back_image_url:string|null};
 type Photo={id:string;slot:string;public_url:string};
 type Detail={product:Listing;photos:Photo[]};
+const aiEnabled=process.env.NEXT_PUBLIC_AI_CARD_TOOLS_ENABLED==='true';
+type CardAi={title:string;sport:string;player:string;team:string;year:string;set:string;cardNumber:string;variant:string;conditionNotes:string;confidence:string;soldSearchTerms:string};
 const fields=[['title','Listing title'],['sport','Sport / category'],['player','Player'],['team','Team'],['card_year','Card year'],['card_set','Set / series'],['card_number','Card number'],['condition','Condition'],['category','eBay category'],['inventory_location','Bin / box location']] as const;
 export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
+ const [ai,setAi]=useState<CardAi|null>(null),[analyzing,setAnalyzing]=useState(false);
  const [detail,setDetail]=useState<Detail|null>(null),[form,setForm]=useState<Partial<Listing>>({}),[price,setPrice]=useState(''),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[uploading,setUploading]=useState('');
  const load=useCallback(async()=>{
   const r=await fetch('/api/portal/products/'+id,{headers:{'x-seller-id':sellerId},cache:'no-store'});
@@ -40,7 +43,21 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
    await load();setMessage('Uploaded photo removed.');
   }catch(e){setError(e instanceof Error?e.message:'Unable to remove photo')}finally{setUploading('')}
  }
- if(!detail)return <div className="portal-panel">{error?<p role="alert">{error}</p>:<p>Loading card details…</p>}</div>;
+ async function identify(){
+  setError('');setMessage('');setAnalyzing(true);setAi(null);
+  try{const res=await send('/api/portal/products/'+id+'/identify',{method:'POST'});
+   setAi(res.suggestion as CardAi);
+  }catch(e){setError(e instanceof Error?e.message:'AI analysis is unavailable')}
+  finally{setAnalyzing(false)}
+ }
+ function applyAi(){
+  if(!ai)return;
+  setForm(old=>({...old,title:ai.title||old.title,sport:ai.sport||old.sport,
+   player:ai.player||old.player,team:ai.team||old.team,card_year:ai.year||old.card_year,
+   card_set:ai.set||old.card_set,card_number:ai.cardNumber||old.card_number}));
+  setMessage('AI suggestions copied into the editor. Review the details, then click Save listing changes.');
+ }
+  if(!detail)return <div className="portal-panel">{error?<p role="alert">{error}</p>:<p>Loading card details…</p>}</div>;
  const item=detail.product,sourceId=item.source==='ebay'?item.source_item_id:item.id;
  const primary=form.manual_image_url||item.image_url;
  const secondary=form.manual_back_image_url||item.back_image_url;
@@ -69,6 +86,20 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
       {uploading===slot&&<small>Uploading…</small>}
      </div>})}
    </div>
+  </section>
+  <section className="portal-panel"><h2>AI card assistance (optional)</h2>
+   <p>Identify visible card details from the front photo, then compare similar <em>sold</em> listings. AI is not a price guide and never updates your listing unless you review and save changes yourself.</p>
+   {aiEnabled?<button className="button button-outline" disabled={analyzing||!!uploading} onClick={identify}>{analyzing?'Identifying card…':'Identify this card from photo'}</button>:
+    <p>AI identification is currently off. An OpenAI API key and explicit activation are required before this tool can be used.</p>}
+   {ai&&<div className="hcs-ai-result">
+    <strong>Photo identification · {ai.confidence} confidence</strong>
+    <p><b>{ai.title||'Title uncertain'}</b></p>
+    <p>{[ai.year,ai.set,ai.cardNumber,ai.player,ai.team,ai.variant].filter(Boolean).join(' · ')}</p>
+    {ai.conditionNotes&&<p>Visible condition notes: {ai.conditionNotes}</p>}
+    {ai.soldSearchTerms&&<a target="_blank" rel="noreferrer" className="corner-text-link" href={'https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(ai.soldSearchTerms)+'&LH_Sold=1&LH_Complete=1'}>Review sold listings for comparable cards ↗</a>}
+    <div className="portal-button-row"><button className="button button-outline" onClick={applyAi}>Copy suggested details into editor</button></div>
+    <small>Verify the year, set, card number, parallel and actual condition before pricing. This tool does not supply verified sale prices.</small>
+   </div>}
   </section>
   <section className="portal-panel"><h2>Card details</h2>
    <div className="portal-form-grid">
