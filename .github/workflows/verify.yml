@@ -17,6 +17,8 @@ jobs:
         run: npx tsc --noEmit --pretty false
       - name: Card pricing safeguards
         run: node scripts/test-card-pricing.mjs
+      - name: Verify Arkansas official SST tax tables
+        run: python3 scripts/test-official-ar-sst.py
       - name: Next.js build
         run: npm run build
         env:
