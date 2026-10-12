@@ -142,8 +142,12 @@ export async function syncEbayWriteback(sellerId:string,access:string){
    const remote=await checkListing(access,listing);
    if(remote.remaining<0)throw new Error('Could not verify current eBay quantity');
    const totalSold=rows.reduce((a,b)=>a+b.sold_quantity,0);
-   if(remote.remaining>0&&remote.remaining-totalSold<p.stock)
-    throw new Error('eBay and site available stock disagree; avoid overwriting a possible external sale');
+   // Never increase eBay stock or overwrite a different eBay-side sale/restock.
+   // We only revise when the remote-to-local difference EXACTLY equals our queued site sales.
+   if(remote.remaining<p.stock)
+    throw new Error('eBay inventory is lower than site stock. Reconcile eBay orders before writing back.');
+   if(remote.remaining>p.stock&&remote.remaining-p.stock!==totalSold)
+    throw new Error('Remote stock changed independently; manual review required to avoid overwriting another sale.');
    if(remote.remaining>p.stock){
     if(p.stock===0){
      if(remote.remaining>totalSold)throw new Error('eBay has additional stock; refusing to end listing blindly');
