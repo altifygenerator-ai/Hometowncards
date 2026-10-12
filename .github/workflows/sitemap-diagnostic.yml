@@ -1,0 +1,34 @@
+name: Diagnose public sitemap HTTP response
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sitemap-diagnostic.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe real crawler responses
+        shell: bash
+        run: |
+          set -u
+          for url in "https://www.hometowncardshop.com/sitemap.xml" "https://www.hometowncardshop.com/robots.txt" "https://www.hometowncardshop.com/" "https://hometowncardshop.com/sitemap.xml" "https://www.glenwoodarkansas.org/sitemap.xml"; do
+            echo "::group::HTTP $url"
+            for agent in "Mozilla/5.0" "Googlebot"; do
+              echo "===== agent=$agent url=$url ====="
+              curl -sS -L --max-redirs 5 --connect-timeout 10 --max-time 25 \
+                -A "$agent" \
+                -D /tmp/sitemap-probe-headers \
+                -o /tmp/sitemap-probe-body \
+                -w "FINAL_STATUS=%{http_code} EFFECTIVE_URL=%{url_effective} TYPE=%{content_type} REDIRECTS=%{num_redirects} BYTES=%{size_download} DNS=%{time_namelookup} TLS=%{time_appconnect} TOTAL=%{time_total}\\n" \
+                "$url" || echo "curl failed exit=$?"
+              echo "HEADERS:"; head -n 28 /tmp/sitemap-probe-headers 2>/dev/null || true
+              echo "BODY PREFIX:"; head -c 450 /tmp/sitemap-probe-body 2>/dev/null || true
+              printf '\\n'
+            done
+            echo "::endgroup::"
+          done
