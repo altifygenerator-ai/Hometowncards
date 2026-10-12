@@ -8,13 +8,21 @@ import {shelvesWithCounts} from '@/lib/categories';
 import {RewardSteps} from '@/components/reward-steps';
 import {Icon} from '@/components/icons';
 
+const storefrontSchema={
+ '@context':'https://schema.org','@type':'OnlineStore','@id':'https://www.hometowncardshop.com/#store',
+ name:'Hometown Card Shop',url:'https://www.hometowncardshop.com/',
+ logo:'https://www.hometowncardshop.com/images/hometown-card-shop-mark.svg',
+ image:'https://www.hometowncardshop.com/images/hometown-card-shop-cover.svg',
+ description:'An Arkansas-based online shop for baseball, football, basketball and vintage trading card collectors.',
+ address:{'@type':'PostalAddress',addressLocality:'Amity',addressRegion:'AR',addressCountry:'US'}
+};
 export default async function Home(){
  const products=await getCatalog();
  const featured=recommended(11,products);const cards=featured.slice(0,3);const picks=featured.length>=11?featured.slice(3):featured.slice(0,8);
  const shelves=shelvesWithCounts(products).filter(s=>s.count>0);
  const featuredNames=['Baseball','Football','Basketball','Other trading cards','Vintage & other finds'];
  const selected=[...shelves].sort((a,b)=>featuredNames.indexOf(a.name)-featuredNames.indexOf(b.name)).slice(0,5);
- return <>
+ return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(storefrontSchema)}}/>
  <section className="corner-hero"><div className="shell corner-hero-layout"><div className="corner-copy"><div className="corner-pretitle"><span>WELCOME IN</span><span>AMITY, ARKANSAS</span><span>EST. 2026</span></div><div className="hand-underline"><span>Pull up a stool. Stay awhile.</span></div><h1>A little card shop.<br/><em>A whole lot to look through.</em></h1><p>Dig through the boxes like you would at the card shop down the road. Real cards, fair prices, easy browsing, and a little extra tucked into every order.</p><div className="corner-actions"><Link className="button button-primary" href="/shop">Dig through the boxes <Icon name="arrow" size={17}/></Link><Link className="corner-text-link" href="/categories">See every shelf →</Link></div><div className="corner-bottom-note"><span className="vintage-star">★</span><span><b>{products.length.toLocaleString('en-US')} individual listings</b><br/>Real cards from the shop, ready to browse</span></div></div>
  <div className="corner-art" aria-label="A few actual cards from the store"><div className="corner-art-header"><span>FROM THE CARD BOXES</span><span>NO. 001</span></div><div className="corner-cards">
  {cards.map((c,i)=><div className={`corner-card corner-card-${i}`} key={c.id}>{c.image?<img src={c.image} alt={c.title}/>:<span>YOUR NEXT FIND</span>}</div>)}
