@@ -1,5 +1,5 @@
 import Link from 'next/link';import {RewardSteps} from '@/components/reward-steps';
-export const metadata={title:'Free Cards & Common Questions'};
+export const metadata={title:'Free Cards & Common Questions',description:'How free bonus cards, shipping and online card shopping work at Hometown Card Shop in Amity, Arkansas.',alternates:{canonical:'/help'}};
 const faqs=[
  ['Do I really get a free card when I only buy one 89¢ card?','Yes. Every paid merchandise order includes at least one free common trading card. No minimum purchase amount. Shipping is separate.'],
  ['How many free cards do I get?','One with any purchase, five when your merchandise subtotal reaches $10, ten at $25, and twenty at $50. These tiers do not stack together.'],
