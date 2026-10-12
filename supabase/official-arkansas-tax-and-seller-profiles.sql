@@ -21,20 +21,7 @@ begin
   coalesce(p_shipping->'address'->>'postal_code','')!~'^\d{5}(-\d{4})?$'
  then raise exception 'Invalid delivery address';end if;
  if v_state='AR' then
-  if p_source !~ '^ar-sst-[0-9]{4}q[1-4] or p_rate<0.065 or p_rate>0.16
-   or p_tax_cents<>round((v_order.subtotal_cents+v_order.shipping_cents)*p_rate)
-  then raise exception 'Invalid Arkansas sales tax amount';end if;
- else
-  if p_source<>'outside-arkansas-not-registered' or p_rate<>0 or p_tax_cents<>0
-  then raise exception 'Invalid out-of-state tax amount';end if;
- end if;
- update public.orders set
-  tax_cents=p_tax_cents,tax_rate=p_rate,tax_source=p_source,
-  total_cents=subtotal_cents+shipping_cents+p_tax_cents,
-  shipping_address=p_shipping,shipping_name=left(coalesce(p_shipping->>'name',''),120),
-  updated_at=now() where id=p_order;
-end;$function$
- or p_rate<0.065 or p_rate>0.16
+  if p_source !~ '^ar-sst-[0-9]{4}q[1-4]$' or p_rate<0.065 or p_rate>0.16
    or p_tax_cents<>round((v_order.subtotal_cents+v_order.shipping_cents)*p_rate)
   then raise exception 'Invalid Arkansas sales tax amount';end if;
  else
