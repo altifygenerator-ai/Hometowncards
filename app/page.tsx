@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import type {Metadata} from 'next';
+export const metadata:Metadata={title:{absolute:'Hometown Card Shop | Sports Cards, Vintage Singles & Trading Cards'},description:'Shop thousands of baseball, football, basketball and vintage trading cards from Amity, Arkansas. Real cards, fair prices and free bonus cards with every order.',alternates:{canonical:'/'}};
 import {recommended} from '@/lib/catalog';
 import {getCatalog} from '@/lib/catalog-db';
 import {ProductCard} from '@/components/product-card';
