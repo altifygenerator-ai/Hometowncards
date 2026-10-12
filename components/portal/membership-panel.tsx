@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
+import {ConnectPanel} from '@/components/portal/connect-panel';
 type MemberData={isFounder:boolean;role:string;currentCommissionBps:number;appliedPlan:string;
  membershipEnrollmentOpen:boolean;membership:{status:string;current_period_end:string|null;cancel_at_period_end:boolean}|null;
  tiers:Array<{code:string;display_name:string;monthly_fee_cents:number;sales_commission_bps:number}>};
@@ -32,5 +33,6 @@ export function MembershipPanel({sellerId}:{sellerId:string}){
     {!data.membership&&data.membershipEnrollmentOpen&&data.role==='owner'&&<button disabled={busy} className="button button-primary" onClick={()=>action('checkout')}>Join Starter for $5.99/month</button>}
     {!data.membership&&!data.membershipEnrollmentOpen&&<p>Membership enrollment opens when we begin welcoming additional sellers.</p>}</>}
   </section>}
+  {data&&!data.isFounder&&data.role==='owner'&&<ConnectPanel sellerId={sellerId}/>}
  </div>;
 }
