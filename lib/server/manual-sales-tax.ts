@@ -1,11 +1,11 @@
 import {PortalError} from '@/lib/server/portal';
-import {resolveArkansasSalesTax} from '@/lib/server/arkansas-sst';
+import {quoteStateBaseTax} from '@/lib/server/state-base-tax';
 export type CheckoutAddress={
  name:string;line1:string;line2:string;city:string;state:string;postalCode:string;country:'US'
 };
 export type ManualTaxQuote={
  taxCents:number;rate:number;taxableCents:number;
- source:'ar-sst-2026q4'|'outside-arkansas-not-registered';
+ source:'state-base-2026-07';
  description:string;
 };
 export function parseCheckoutAddress(value:unknown):CheckoutAddress{
@@ -23,21 +23,8 @@ export function parseCheckoutAddress(value:unknown):CheckoutAddress{
  if(input.country&&input.country!=='US')throw new PortalError('We currently ship within the United States.',400);
  return address;
 }
-function validateAmounts(subtotalCents:number,shippingCents:number){
- if(!Number.isSafeInteger(subtotalCents)||subtotalCents<1||subtotalCents>50_000_000||
-    !Number.isSafeInteger(shippingCents)||shippingCents<0||shippingCents>100_000)
-  throw new PortalError('Invalid merchandise or shipping amount.',400);
-}
+/** Full shipping address remains mandatory at payment, but only state code decides tax. */
 export async function quoteManualSalesTax(address:CheckoutAddress,subtotalCents:number,shippingCents:number):Promise<ManualTaxQuote>{
- validateAmounts(subtotalCents,shippingCents);
- const taxableCents=subtotalCents+shippingCents;
- // Founder-only: no out-of-state nexus currently declared. Review if sales cross remote thresholds.
- if(address.state!=='AR')return {taxCents:0,rate:0,taxableCents,
-  source:'outside-arkansas-not-registered',description:'No Arkansas sales tax applies to deliveries outside Arkansas.'};
- const result=await resolveArkansasSalesTax(address.postalCode);
- return {
-  taxCents:Math.round(taxableCents*result.rate),rate:result.rate,taxableCents,
-  source:result.source,
-  description:'Arkansas state, county and applicable city sales tax ('+result.basis+')'
- };
+ return quoteStateBaseTax(address.state,subtotalCents,shippingCents);
 }
+

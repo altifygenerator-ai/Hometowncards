@@ -58,7 +58,7 @@ export async function POST(req:NextRequest){
    add(`line_items[${i}][price_data][product_data][name]`,item.title.slice(0,120));
    add(`line_items[${i}][quantity]`,item.quantity);
   });
-  // Shipping is already counted in the Arkansas taxable base. It is charged once.
+  // Shipping is included in the store's simplified state-rate taxable base and charged once.
   const k=reserved.items.length;
   if(reserved.shipping_cents>0){
    add('line_items['+k+'][price_data][currency]','usd');
@@ -71,7 +71,7 @@ export async function POST(req:NextRequest){
    const idx=k+(reserved.shipping_cents>0?1:0);
    add('line_items['+idx+'][price_data][currency]','usd');
    add('line_items['+idx+'][price_data][unit_amount]',manualTax.taxCents);
-   add('line_items['+idx+'][price_data][product_data][name]','Arkansas sales tax');
+   add('line_items['+idx+'][price_data][product_data][name]',address.state+' statewide sales tax');
    add('line_items['+idx+'][quantity]',1);
   }
   const session=await stripePost('checkout/sessions',params,'hcs-session-'+orderId);
