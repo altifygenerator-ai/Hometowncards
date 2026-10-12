@@ -24,8 +24,10 @@ function storageHeaders(){return {apikey:key,...(key.startsWith('sb_secret_')?{}
 async function removeObject(path:string){
  if(!path)return;
  const u=supabaseUrl+'/storage/v1/object/'+bucket+'/'+path.split('/').map(encodeURIComponent).join('/');
- const res=await fetch(u,{method:'DELETE',headers:storageHeaders(),cache:'no-store'});
- if(!res.ok)console.error('Photo cleanup failed',res.status);
+ try{
+  const res=await fetch(u,{method:'DELETE',headers:storageHeaders(),cache:'no-store'});
+  if(!res.ok)console.error('Photo cleanup failed',res.status);
+ }catch(err){console.error('Photo cleanup temporarily unavailable',err);}
 }
 async function rows(productId:string,sellerId:string,slot:string){
  return db<Photo[]>('product_images?select=id,slot,storage_path,public_url&seller_id=eq.'+sellerId+'&product_id=eq.'+productId+'&slot=eq.'+slot+'&limit=1');
