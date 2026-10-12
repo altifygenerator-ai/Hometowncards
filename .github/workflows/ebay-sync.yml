@@ -1,0 +1,23 @@
+name: Sync connected eBay seller inventory
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+jobs:
+  ebay-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Poll connected eBay accounts safely
+        env:
+          HCS_EBAY_SYNC_SECRET: ${{ secrets.HCS_EBAY_SYNC_SECRET }}
+        run: |
+          if [ -z "$HCS_EBAY_SYNC_SECRET" ]; then
+            echo "No sync secret configured; website-only sellers are unaffected."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 55 --retry 2 \
+            -X POST "https://www.hometowncardshop.com/api/ebay-sync" \
+            -H "Authorization: Bearer $HCS_EBAY_SYNC_SECRET" \
+            -H "Content-Type: application/json" \
+            --data '{}'
