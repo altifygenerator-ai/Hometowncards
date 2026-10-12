@@ -25,3 +25,13 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://www.hometowncardshop.com
           NEXT_PUBLIC_STORE_LIVE: 'false'
           NEXT_PUBLIC_CHECKOUT_ENABLED: 'false'
+      - name: Verify built Arkansas tax quote endpoint
+        run: |
+          npm run start -- -p 3195 > /tmp/hcs-server.log 2>&1 &
+          echo $! > /tmp/hcs-server.pid
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3195/ > /dev/null; then break; fi
+            sleep 1
+          done
+          python3 scripts/test-tax-checkout-api.py || (cat /tmp/hcs-server.log && exit 1)
+          kill $(cat /tmp/hcs-server.pid) || true
