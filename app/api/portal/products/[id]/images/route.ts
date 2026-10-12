@@ -37,7 +37,7 @@ export async function POST(req:NextRequest,ctx:{params:Promise<{id:string}>}){
   const form=await req.formData();
   const file=form.get('file'),slot=String(form.get('slot')||'front');
   if(!slots.test(slot))throw new PortalError('Choose a front, back or extra photo slot.');
-  if(!(file instanceof File)||file.size<100||file.size>7_000_000)throw new PortalError('Choose a JPG, PNG or WebP photo smaller than 7 MB.');
+  if(!(file instanceof File)||file.size<100||file.size>3_800_000)throw new PortalError('Choose a JPG, PNG or WebP photo smaller than 3.8 MB.');
   const buffer=new Uint8Array(await file.arrayBuffer());
   const mime=signature(buffer);
   if(!mime||mime!==file.type)throw new PortalError('The uploaded image type does not match the file contents.');
