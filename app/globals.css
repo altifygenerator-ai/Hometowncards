@@ -211,3 +211,35 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .hcs-zoom-image img{max-height:85vh;max-width:95vw;object-fit:contain}
 .hcs-zoom-nav{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:8px;font-size:12px}
 .hcs-zoom-nav button{background:#fff;color:#071b35;border:0;border-radius:4px;padding:7px 12px}
+
+
+/* Dealer-owned image and listing editing, separated from customer-facing presentation. */
+.hcs-editor-page{padding:36px 0 95px;max-width:1150px}
+.hcs-listing-editor{display:grid;gap:20px}
+.hcs-editor-bar{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:13px;font-weight:750;color:#1e65a4}
+.hcs-editor-bar a:hover,.hcs-admin-edit-link:hover{text-decoration:underline}
+.hcs-listing-editor .portal-panel{padding:26px}
+.hcs-listing-editor .portal-panel h1{font-size:clamp(25px,3vw,37px);margin:6px 0 12px}
+.hcs-listing-editor .portal-panel>p{color:#51657e;line-height:1.6}
+.hcs-editor-warning{background:#fff6df;border:1px solid #ead399;padding:12px;border-radius:7px;color:#735215!important}
+.hcs-editor-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.hcs-editor-photo{border:1px solid #d6e3ee;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.hcs-editor-photo>strong{font-size:13px}
+.hcs-editor-photo-preview{height:155px;border-radius:6px;background:#f4f7fa;display:grid;place-items:center;overflow:hidden}
+.hcs-editor-photo-preview>a{width:100%;height:100%;display:grid;place-items:center}
+.hcs-editor-photo-preview img{width:100%;height:100%;object-fit:contain}
+.hcs-editor-photo-preview span{color:#728399;font-size:11px}
+.hcs-photo-upload{display:grid;gap:5px;font-size:12px;font-weight:700;color:#204f79}
+.hcs-photo-upload input{width:100%;font-size:11px;cursor:pointer}
+.hcs-photo-remove{font-size:11px;padding:5px 3px;border:0;background:none;text-decoration:underline;color:#983f3f}
+.hcs-editor-area{display:grid;gap:7px;font-size:13px;font-weight:750;margin:17px 0;color:var(--navy)}
+.hcs-editor-area textarea{width:100%;border:1px solid #c1cedc;border-radius:6px;padding:11px;font:inherit;color:#172b43;background:#fff}
+.hcs-editor-help{font-size:12px;color:#566a7d;margin-top:16px}
+.hcs-admin-thumb{width:60px;height:70px;background:#f3f7fb;border:1px solid #d6e0e9;display:grid;place-items:center;border-radius:4px;overflow:hidden}
+.hcs-admin-thumb img{width:100%;height:100%;object-fit:contain}
+.hcs-admin-thumb span{font-size:9px;text-align:center;color:#667c92}
+.hcs-admin-edit-link{font-weight:800;color:#0c487f}
+.hcs-detail-description{padding:16px 0;color:#415569}
+.hcs-detail-description h2{font-size:19px;color:var(--navy);margin-bottom:7px}
+.hcs-detail-description p{font-size:14px;line-height:1.65;white-space:pre-wrap}
+@media(max-width:650px){.hcs-editor-page{padding-top:14px}.hcs-listing-editor .portal-panel{padding:17px}.hcs-editor-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
