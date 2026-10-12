@@ -8,4 +8,6 @@ const sql=readFileSync('supabase/manual-inventory-checkout.sql','utf8');
 if(!sql.includes("interval '45 minutes'"))throw Error('Expected 45-minute database inventory hold is missing');
 if(minutes>=45)throw Error('Stripe checkout outlasts the inventory hold');
 if(!source.includes('stripePost(\'checkout/sessions\',params'))throw Error('Expected hosted Stripe checkout route is missing');
+// Stripe's 2026 API version rejects payment_method_types when Checkout is created.
+if(/add\('payment_method_types/.test(source))throw Error('Deprecated payment_method_types will break live Stripe Checkout');
 console.log('Checkout expiration margin checked:',minutes,'minutes; inventory hold: 45 minutes');
