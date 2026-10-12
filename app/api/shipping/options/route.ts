@@ -18,20 +18,24 @@ export async function POST(req:NextRequest){
   const seller=sellers[0];if(!seller)throw new PortalError('Shop unavailable.',503);
   const filter=[...ids].join(',');
   const [products,profiles]=await Promise.all([
-   db<Array<{source_item_id:string;stock:number;status:string;needs_review:boolean;manual_paused:boolean;price_cents:number;price_override_cents:number|null}>>('products?select=source_item_id,stock,status,needs_review,manual_paused,price_cents,price_override_cents&source=eq.ebay&seller_id=eq.'+seller.id+'&source_item_id=in.('+filter+')'),
+   db<Array<{source_item_id:string;stock:number;status:string;needs_review:boolean;manual_paused:boolean;price_cents:number;price_override_cents:number|null;weight_oz:number|null;title:string;category:string}>>('products?select=source_item_id,stock,status,needs_review,manual_paused,price_cents,price_override_cents,weight_oz,title,category&source=eq.ebay&seller_id=eq.'+seller.id+'&source_item_id=in.('+filter+')'),
    db<ShippingProfile[]>('shipping_profiles?select=*&seller_id=eq.'+seller.id+'&active=eq.true')
   ]);
   if(products.length!==ids.size)throw new PortalError('Your cart has unavailable cards.',409);
-  let count=0,subtotal=0;
+  let count=0,subtotal=0,purchasedPackedWeightOz=0,requiresParcel=false;
   for(const p of products){
    const qty=quantities.get(p.source_item_id)!;
    if(p.status!=='published'||p.needs_review||p.manual_paused||p.stock<qty)throw new PortalError('A card in your cart is no longer available.',409);
    subtotal+=(p.price_override_cents??p.price_cents)*qty;count+=qty;
+   const special=/(^|[^a-z])(psa|bgs|sgc|cgc|graded|slab|booster|sealed|blaster|hobby box)([^a-z]|$)/i.test(p.title)||/(^|[^a-z])(graded|sealed|packs|boxes)([^a-z]|$)/i.test(p.category);
+   requiresParcel=requiresParcel||special;
+   const raw=Number(p.weight_oz);
+   purchasedPackedWeightOz+=qty*Math.max(special?4:0.30,Number.isFinite(raw)&&raw>0?raw+0.24:0);
   }
   if(!Number.isSafeInteger(subtotal)||subtotal<1)throw new PortalError('Invalid cart amount.',400);
   const gifts=bonusCount(subtotal);
-  const options=estimateShipping(profiles,{purchasedQuantity:count,bonusQuantity:gifts,merchandiseSubtotalCents:subtotal},{trackingRequiredFromCents:seller.tracking_required_from_cents,insuranceRequiredFromCents:seller.insurance_required_from_cents});
-  return NextResponse.json({subtotalCents:subtotal,freeCards:gifts,options,note:'Seller-set rate estimates; actual postage depends on package dimensions and destination. The shipping charge is confirmed before payment.'},{headers});
+  const options=estimateShipping(profiles,{purchasedQuantity:count,bonusQuantity:gifts,merchandiseSubtotalCents:subtotal,knownItemWeightOz:purchasedPackedWeightOz,requiresParcel},{trackingRequiredFromCents:seller.tracking_required_from_cents,insuranceRequiredFromCents:seller.insurance_required_from_cents});
+  return NextResponse.json({subtotalCents:subtotal,freeCards:gifts,options,note:'Estimated packed weight includes the cards, penny sleeves, toploaders, paper and envelope or mailer. Letter service requires an eligible size, thickness and flexibility.'},{headers});
  }catch(e){if(!(e instanceof PortalError))console.error('Shipping options error',e);
   return NextResponse.json({error:e instanceof PortalError?e.message:'Shipping options are unavailable.'},{status:e instanceof PortalError?e.code:500,headers});
  }
