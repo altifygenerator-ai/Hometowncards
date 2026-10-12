@@ -22,7 +22,7 @@ function signature(bytes:Uint8Array){
 }
 function storageHeaders(){return {apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key})};}
 async function removeObject(path:string){
- if(!path.startsWith(''))return;
+ if(!path)return;
  const u=supabaseUrl+'/storage/v1/object/'+bucket+'/'+path.split('/').map(encodeURIComponent).join('/');
  const res=await fetch(u,{method:'DELETE',headers:storageHeaders(),cache:'no-store'});
  if(!res.ok)console.error('Photo cleanup failed',res.status);
@@ -47,19 +47,13 @@ export async function POST(req:NextRequest,ctx:{params:Promise<{id:string}>}){
   const response=await fetch(u,{method:'POST',headers:{...storageHeaders(),'Content-Type':mime,'x-upsert':'false','Cache-Control':'max-age=31536000'},body:buffer,cache:'no-store'});
   if(!response.ok){console.error('Photo storage upload error',response.status,(await response.text()).slice(0,300));throw new PortalError('The photo could not be uploaded.',502);}
   const url=supabaseUrl+'/storage/v1/object/public/'+bucket+'/'+storagePath.split('/').map(encodeURIComponent).join('/');
-  const previous=await rows(id,owner.sellerId,slot);
+  let oldPath:string|null=null;
   try{
-   if(previous[0])await db('product_images?id=eq.'+previous[0].id+'&seller_id=eq.'+owner.sellerId,{
-    method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({storage_path:storagePath,public_url:url,content_type:mime,byte_size:file.size,created_by:owner.userId,created_at:new Date().toISOString()})});
-   else await db('product_images',{method:'POST',headers:{Prefer:'return=minimal'},
-    body:JSON.stringify({seller_id:owner.sellerId,product_id:id,slot,storage_path:storagePath,public_url:url,content_type:mime,byte_size:file.size,created_by:owner.userId})});
-   const patch:Record<string,unknown>={image_updated_at:new Date().toISOString(),updated_at:new Date().toISOString(),last_edited_by:owner.userId};
-   if(slot==='front')patch.manual_image_url=url;
-   if(slot==='back')patch.manual_back_image_url=url;
-   await db('products?id=eq.'+id+'&seller_id=eq.'+owner.sellerId,{
-    method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(patch)});
+   oldPath=await db<string|null>('rpc/hcs_commit_product_photo',{
+    method:'POST',body:JSON.stringify({p_seller:owner.sellerId,p_product:id,p_actor:owner.userId,
+     p_slot:slot,p_storage_path:storagePath,p_public_url:url,p_type:mime,p_bytes:file.size})});
   }catch(err){await removeObject(storagePath);throw err;}
-  if(previous[0]?.storage_path)await removeObject(previous[0].storage_path);
+  if(oldPath)await removeObject(oldPath);
   await audit(owner.sellerId,owner.userId,'listing_photo_uploaded',id,null,{slot,storagePath,bytes:file.size});
   return json({ok:true,url,slot});
  }catch(e){return failure(e)}
@@ -69,14 +63,9 @@ export async function DELETE(req:NextRequest,ctx:{params:Promise<{id:string}>}){
   const {id}=await ctx.params;const {owner}=await locate(req,id);
   const body=await req.json() as {slot?:string};const slot=body.slot||'';
   if(!slots.test(slot))throw new PortalError('Invalid photo slot.');
-  const previous=await rows(id,owner.sellerId,slot);
-  if(!previous[0])return json({ok:true});
-  await db('product_images?id=eq.'+previous[0].id+'&seller_id=eq.'+owner.sellerId,{method:'DELETE'});
-  const patch:Record<string,unknown>={image_updated_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-  if(slot==='front')patch.manual_image_url=null;
-  if(slot==='back')patch.manual_back_image_url=null;
-  await db('products?id=eq.'+id+'&seller_id=eq.'+owner.sellerId,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(patch)});
-  await removeObject(previous[0].storage_path);
+  const oldPath=await db<string|null>('rpc/hcs_delete_product_photo',{
+   method:'POST',body:JSON.stringify({p_seller:owner.sellerId,p_product:id,p_slot:slot})});
+  if(oldPath)await removeObject(oldPath);
   await audit(owner.sellerId,owner.userId,'listing_photo_removed',id,{slot},null);
   return json({ok:true});
  }catch(e){return failure(e)}
