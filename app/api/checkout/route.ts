@@ -53,8 +53,10 @@ export async function POST(req:NextRequest){
   // a 30-minute timestamp can expire BELOW Stripe's minimum during the network request.
   // Give Stripe 40 minutes, leaving a 5-minute margin before the stock hold expires.
   add('expires_at',Math.ceil(Date.now()/1000)+40*60);
-  // Card supports major wallets where available. Do not enable delayed settlement methods.
-  add('payment_method_types[0]','card');
+  // Modern Stripe accounts use Dashboard-managed dynamic payment methods. Do not pass
+  // legacy payment_method_types: Stripe's current API rejects this parameter outright.
+  // Only immediate paid card-like methods should be enabled in Stripe Dashboard; the
+  // webhook settles stock only after a successful payment confirmation.
   reserved.items.forEach((item,i)=>{
    add(`line_items[${i}][price_data][currency]`,'usd');
    add(`line_items[${i}][price_data][unit_amount]`,item.unit_price_cents);
