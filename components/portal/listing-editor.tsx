@@ -7,6 +7,24 @@ type Detail={product:Listing;photos:Photo[]};
 const aiEnabled=process.env.NEXT_PUBLIC_AI_CARD_TOOLS_ENABLED==='true';
 type CardAi={title:string;sport:string;player:string;team:string;year:string;set:string;cardNumber:string;variant:string;conditionNotes:string;confidence:string;soldSearchTerms:string};
 const fields=[['title','Listing title'],['sport','Sport / category'],['player','Player'],['team','Team'],['card_year','Card year'],['card_set','Set / series'],['card_number','Card number'],['condition','Condition'],['category','eBay category'],['inventory_location','Bin / box location']] as const;
+async function prepareCardPhoto(file:File):Promise<File>{
+ const supported=['image/jpeg','image/png','image/webp'].includes(file.type);
+ if(supported&&file.size<=3_700_000)return file;
+ let bitmap:ImageBitmap;
+ try{bitmap=await createImageBitmap(file)}catch{throw Error('This photo format could not be opened. Please select a JPG, PNG or WebP picture.')}
+ try{
+  for(const [longest,quality] of [[2200,.86],[1800,.80],[1400,.73],[1200,.65]]){
+   const scale=Math.min(1,longest/Math.max(bitmap.width,bitmap.height));
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   const ctx=canvas.getContext('2d');if(!ctx)throw Error('Browser image resizing is unavailable.');
+   ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+   const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+   if(blob&&blob.size<=3_700_000)return new File([blob],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'});
+  }
+  throw Error('This photo is too large to upload. Please reduce its resolution.');
+ }finally{bitmap.close()}
+}
 export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
  const [ai,setAi]=useState<CardAi|null>(null),[analyzing,setAnalyzing]=useState(false);
  const [detail,setDetail]=useState<Detail|null>(null),[form,setForm]=useState<Partial<Listing>>({}),[price,setPrice]=useState(''),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[uploading,setUploading]=useState('');
@@ -31,7 +49,7 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
  }
  async function upload(slot:string,file?:File){
   if(!file)return;setUploading(slot);setError('');setMessage('');
-  try{const data=new FormData();data.append('file',file);data.append('slot',slot);
+  try{const data=new FormData();const prepared=await prepareCardPhoto(file);data.append('file',prepared);data.append('slot',slot);
    await send('/api/portal/products/'+id+'/images',{method:'POST',body:data});
    await load();setMessage('Photo uploaded. It will appear on the storefront after its image cache refreshes.');
   }catch(e){setError(e instanceof Error?e.message:'Upload failed')}finally{setUploading('')}
@@ -71,7 +89,7 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
   {error&&<p role="alert" className="portal-alert portal-alert-error">{error}</p>}
   {message&&<p role="status" className="portal-alert portal-alert-ok">{message}</p>}
   <section className="portal-panel">
-   <h2>Listing photos</h2><p>Upload JPG, PNG or WebP photos up to 7 MB. The site keeps your uploaded photos separate from eBay, so an eBay sync won't erase them.</p>
+   <h2>Listing photos</h2><p>Upload JPG, PNG, or WebP photos. Large phone photos are automatically optimized to fit the upload limit. The site keeps your uploaded photos separate from eBay, so an eBay sync won't erase them.</p>
    <div className="hcs-editor-photo-grid">
     {['front','back',...Array.from({length:8},(_,i)=>'extra-'+(i+1))].map(slot=>{
      const custom=bySlot.get(slot),fallback=slot==='front'?primary:slot==='back'?secondary:null;
@@ -80,7 +98,7 @@ export function ListingEditor({id,sellerId}:{id:string;sellerId:string}){
       <strong>{slot==='front'?'Front / cover':slot==='back'?'Back':('Additional '+slot.slice(-1))}</strong>
       <div className="hcs-editor-photo-preview">{src?<a href={src} target="_blank" rel="noreferrer" title="Open full photo"><img src={src} alt={slot+' image'} referrerPolicy="no-referrer"/></a>:<span>No photo yet</span>}</div>
       <label className="hcs-photo-upload">Upload / replace
-       <input aria-label={'Upload '+slot+' photo'} type="file" accept="image/jpeg,image/png,image/webp" disabled={!!uploading} onChange={e=>{void upload(slot,e.target.files?.[0]);e.target.value=''}}/>
+       <input aria-label={'Upload '+slot+' photo'} type="file" accept="image/*" disabled={!!uploading} onChange={e=>{void upload(slot,e.target.files?.[0]);e.target.value=''}}/>
       </label>
       {custom&&<button type="button" className="hcs-photo-remove" onClick={()=>remove(slot)} disabled={!!uploading}>Remove uploaded photo</button>}
       {uploading===slot&&<small>Uploading…</small>}
