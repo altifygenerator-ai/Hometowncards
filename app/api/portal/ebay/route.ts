@@ -43,6 +43,7 @@ export async function POST(req:NextRequest){
   if(!connection)throw new PortalError('Connect an eBay account first.',409);
   if(body.action==='mode'){
    if(body.mode!=='import_only'&&body.mode!=='two_way')throw new PortalError('Invalid eBay sync mode.',400);
+   if(body.mode==='two_way'&&!connection.last_listing_sync_at)throw new PortalError('Complete and verify the first eBay listing import before turning on writeback.',409);
    await db('ebay_connections?seller_id=eq.'+c.sellerId,{method:'PATCH',
     headers:{Prefer:'return=minimal'},body:JSON.stringify({sync_mode:body.mode,updated_at:new Date().toISOString()})});
    return json({ok:true,mode:body.mode});
