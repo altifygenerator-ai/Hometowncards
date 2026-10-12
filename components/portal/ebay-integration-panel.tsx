@@ -9,7 +9,7 @@ type EbayStatus={
  nextPage:number;totalPages:number|null;lastError:string|null};
 };
 type SyncResult={ok:boolean;orders:{applied:number;duplicates:number;conflicts:number;missing:number};
- listings:{imported:number;review:number;processed:number;page:number|null;totalPages:number;finished:boolean};
+ listings:{imported:number;review:number;excluded:number;ignored:number;unknown:number;processed:number;page:number|null;totalPages:number;finished:boolean};
  writeback:{completed:number;needsReview:number;disabled:boolean}};
 export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
  const [data,setData]=useState<EbayStatus|null>(null),[busy,setBusy]=useState(false),
@@ -35,19 +35,21 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
   window.location.assign(out.url);
  })}
  function synchronize(){void act(async()=>{
-  let pages=0,done=false,created=0,orderSales=0,flagged=0,writebacks=0;
+  let pages=0,done=false,created=0,hidden=0,ignored=0,unclassified=0,orderSales=0,flagged=0,writebacks=0;
   // Keep each invocation below the serverless function timeout; work in 3-page blocks.
   while(!done&&pages<50){
    const result=await request('POST',{action:'sync'}) as SyncResult;
    pages++;
    done=result.listings.finished;created+=result.listings.imported;
+   hidden+=result.listings.excluded;ignored+=result.listings.ignored;unclassified+=result.listings.unknown;
    orderSales+=result.orders.applied;flagged+=result.orders.conflicts+result.listings.review;
    writebacks+=result.writeback.completed;
-   setNotice('Synced '+created+' listings; '+(result.listings.page?
+   setNotice('Synced '+created+' card listings; hid '+hidden+' non-card items; '+(result.listings.page?
     'continuing on page '+result.listings.page+' of '+result.listings.totalPages:'listing pass complete')+'…');
   }
   setNotice('eBay sync '+(done?'completed.':'paused after 50 batches.')+
-    ' Listings updated: '+created+'. eBay sales imported: '+orderSales+
+    ' Card listings updated: '+created+'. Non-card site items hidden: '+hidden+
+    '. Non-card listings skipped: '+ignored+'. Unclassified: '+unclassified+'. eBay sales imported: '+orderSales+
     '. Website sales written back: '+writebacks+'. Needs review: '+flagged+'.');
   await reload();
  })}
@@ -69,8 +71,8 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
  })}
  const when=(s:string|null|undefined)=>s?new Date(s).toLocaleString():'Not yet';
  return <section className="portal-panel">
-  <h2>eBay inventory synchronization</h2>
-  <p>Connect eBay if you want listings and purchases synced between your eBay account and this shop.
+  <h2>eBay trading-card inventory synchronization</h2>
+  <p>Connect eBay to sync <strong>trading cards only</strong>. Books, video games, electronics, guitars, and other unrelated eBay items are skipped. Running Sync again also hides unrelated listings imported earlier, without deleting anything on eBay.
    <strong> eBay is entirely optional.</strong> You can still add cards directly or import CSV files without an eBay account.</p>
   {!data?<p>Checking eBay status…</p>:
    !data.configured?<p>eBay Production API settings must be added to Vercel before you can connect an account.
@@ -86,7 +88,7 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
     <p><strong>Sync mode:</strong> {data.account?.mode==='two_way'?'Two-way sale coordination':'Import-only (safe first step)'}</p>
     {data.account?.lastError&&<p className="portal-error">Last eBay issue: {data.account.lastError}</p>}
     <div className="portal-actions">
-     <button className="button button-primary" disabled={busy} onClick={synchronize}>{busy?'Syncing…':'Sync eBay listings and sales now'}</button>
+     <button className="button button-primary" disabled={busy} onClick={synchronize}>{busy?'Syncing…':'Sync cards & hide non-card imports'}</button>
      <button className="button button-outline" disabled={busy} onClick={switchMode}>
       {data.account?.mode==='two_way'?'Pause website → eBay updates':'Enable two-way sales updates'}</button>
      <button className="button button-outline" disabled={busy} onClick={reset}>Restart listing import</button>
