@@ -43,14 +43,9 @@ export function SellerInterestForm(){
    <label>Where do you sell now? <span aria-hidden="true">*</span><select name="currentlySelling" required defaultValue=""><option value="" disabled>Choose one</option>
      <option>eBay</option><option>Other online marketplaces</option><option>Card shows / local sales</option><option>My own website</option><option>Not selling yet</option></select></label>
   </div>
-  <fieldset className="dealer-plan-choice"><legend>Which seller plan would interest you?</legend>
-   <label><input type="radio" name="planInterest" value="payg" defaultChecked/> Pay As You Sell — 2% per sale, $0 monthly</label>
-   <label><input type="radio" name="planInterest" value="starter"/> Starter — $5.99/month, 0% marketplace commission</label>
-   <label><input type="radio" name="planInterest" value="undecided"/> Still deciding</label>
-  </fieldset>
   <label>Anything else about your cards or shop? <textarea name="notes" maxLength={1200} rows={4} placeholder="Sports, graded cards, vintage collections, what you would like to see..."/></label>
   <div className="dealer-honeypot" aria-hidden="true"><label>Leave this blank<input tabIndex={-1} autoComplete="off" name="website"/></label></div>
-  <p className="dealer-form-note">This is an interest form, not seller registration. There’s no fee and no obligation. We’ll use your details only to follow up about selling here.</p>
+  <p className="dealer-form-note">This is only an interest form, not seller registration. There are no fees or obligations. We’ll use your details only to follow up if we open to other sellers.</p>
   {key?<><Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onLoad={render}/><div ref={ref} aria-label="Security check"/></>:
    <p>Our secure contact form is temporarily unavailable.</p>}
   {error&&<p role="alert" className="dealer-error">{error}</p>}

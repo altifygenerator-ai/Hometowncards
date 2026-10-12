@@ -191,3 +191,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .cart-shipping-total{font-size:13px;margin:5px 0 10px;color:#233f59}.cart-shipping-total strong{font-size:16px}
 
 .product-dealer-link{display:inline-block;margin:7px 0 0;font-size:11px;font-weight:700;color:#1b5c9b}.product-dealer-link:hover{text-decoration:underline;text-underline-offset:2px}
+
+/* A single unobtrusive interest invitation; public shop remains collector-first. */
+.seller-interest-whisper{text-align:center;padding:19px 10px 30px;color:#6c7888;font-size:12px;line-height:1.7}
+.seller-interest-whisper a{color:#245a85;text-decoration:underline;text-underline-offset:3px}

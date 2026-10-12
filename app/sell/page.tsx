@@ -1,9 +1,18 @@
 import Link from 'next/link';
 import {SellerInterestForm} from '@/components/seller-interest-form';
-export const metadata={title:'Sell Cards With Us | Hometown Card Shop',description:'Interested in selling sports and trading cards through Hometown Card Shop? Meet the marketplace, explore seller plans, and get on the dealer interest list.'};
-export default function SellPage(){return <><section className="inner-hero"><div className="shell"><span className="kicker">THERE’S ROOM BEHIND THE COUNTER</span><h1>Have cards to sell? Let’s talk.</h1><p>Hometown Card Shop is growing into a home for independent card dealers, collectors, and small shops. We’re starting with our founding dealer and gathering interest from the next shops to join.</p></div></section>
- <section className="shell dealer-landing"><div className="dealer-intro"><span className="kicker">OUR IDEA</span><h2>One card shop. A whole community of dealers.</h2><p>Bring your own card inventory and run your own shop inside Hometown Card Shop. Collectors get a familiar place to browse players, teams, years, and sets. Dealers get their own listings, orders, and shipping setup.</p><p>We’re building out seller accounts and payouts before invitations open. For now, this is simply a way to raise your hand and tell us what you’d want from the platform.</p></div>
- <div className="dealer-tiers"><article className="dealer-tier"><span className="kicker">NO MONTHLY COMMITMENT</span><h3>Pay As You Sell</h3><div className="dealer-price">2% <small>per completed sale</small></div><p>$0 monthly. Marketplace fee applies to merchandise sold, not shipping or sales tax.</p></article>
- <article className="dealer-tier"><span className="kicker">FOR THE REGULAR DEALER</span><h3>Starter Member</h3><div className="dealer-price">$5.99 <small>/ month</small></div><p>0% marketplace commission while your membership is active. Payment processing and shipping remain separate.</p></article></div>
- <div className="dealer-grid"><div className="dealer-benefits"><span className="kicker">BUILT AROUND DEALERS</span><h2>Your cards. Your shop.</h2><p>We’re planning seller-specific listings, inventory uploads, a private shopkeeper dashboard, and straightforward shipping options.</p><p>Whether you’ve got a few boxes of baseball cards or thousands of singles, we’d like to hear from you.</p><p><strong>Not accepting new dealers yet.</strong> No account is created and there’s nothing to pay when you send this form.</p><Link href="/sellers" className="corner-text-link">Browse the current shops →</Link></div>
- <section className="dealer-form-wrap" id="interest"><span className="kicker">GET ON THE INTEREST LIST</span><h2>Interested in becoming a seller?</h2><p>Tell us a little about your collection. We’ll send you an update when dealer invitations are ready.</p><SellerInterestForm/></section></div></section></>}
+export const metadata={title:'Interested in Selling Cards? | Hometown Card Shop',description:'Have a collection of sports or trading cards to sell? Let Hometown Card Shop know you might be interested in selling here someday.'};
+export default function SellPage(){return <><section className="inner-hero"><div className="shell">
+ <span className="kicker">JUST GAUGING INTEREST</span>
+ <h1>Interested in selling cards here?</h1>
+ <p>We’re considering ways to welcome other card collectors and independent sellers in the future. Nothing is open for signup yet, but we’d like to hear from you.</p>
+ </div></section>
+ <section className="shell dealer-landing"><div className="dealer-grid">
+ <div className="dealer-benefits"><span className="kicker">TELL US ABOUT YOUR COLLECTION</span>
+ <h2>Got some cards to sell?</h2>
+ <p>Whether you have a few boxes of vintage baseball cards or thousands of singles, let us know what you sell and where you sell now.</p>
+ <p>This is simply an interest list. There are no accounts to open, no fees to pay, and no commitment. We’ll only reach out if we begin inviting other sellers.</p>
+ <Link href="/shop" className="corner-text-link">Back to browsing cards →</Link>
+ </div>
+ <section className="dealer-form-wrap" id="interest"><span className="kicker">SELLER INTEREST FORM</span>
+ <h2>Tell us a little about yourself.</h2><SellerInterestForm/></section>
+ </div></section></>}
