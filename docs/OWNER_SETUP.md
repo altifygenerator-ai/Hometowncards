@@ -108,3 +108,11 @@ until seller payments, tax, refunds, holds and disputes are tested.
 - `/api/portal/connect` GET/POST supports Stripe Express creation and account links ONLY for already-approved outside seller owners and only when `STRIPE_CONNECT_ONBOARDING_ENABLED=true`, `SELLER_SIGNUPS_ENABLED=true` and DB `seller_signup_enabled=true`.
 - Separate classic Connect webhooks recorded in `connect_webhook_events`; disputed charges, returns and payouts still require detailed financial handling before anyone sells.
 - Stripe Connect webhook secret must be set in `STRIPE_CONNECT_WEBHOOK_SECRET`; never share with the main payment webhook.
+
+## Cheapest practical labels without paying for a shipping SaaS
+- Low-value flexible eligible mail: USPS letter postage (no USPS Tracking). It is NOT eBay Standard Envelope; that service is limited to eBay transactions.
+- Tracked parcels: compare USPS Ground Advantage and UPS discounted labels (for example with free Pirate Ship); exact commercial postage depends on package and destination.
+- High-value: tracked with extra insurance as needed. The buyer-visible rate comes from a selected seller-owned shipping template.
+- Dealer portal: export `/api/portal/orders/shipping-export` CSV of PAID / PACKING orders with addresses, seller-specific parcel estimates, service and shipping charge.
+- Label costs are not automatically purchased or tracked in the app; users must map CSV columns, confirm addresses/weights and paste carrier/tracking in the order dashboard.
+- Seller-specific shipping templates are inactive pending real postage charges and packing weight checks.
