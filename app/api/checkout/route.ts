@@ -16,7 +16,7 @@ export async function POST(req:NextRequest){
  if(origin&&new URL(origin).host!==req.nextUrl.host)return error('Checkout request origin is not allowed.',403);
  let orderId:string|null=null;let sessionId:string|null=null;
  try{
-  const body=await req.json() as {lines?:Line[];bonusSport?:string;turnstileToken?:string};
+  const body=await req.json() as {lines?:Line[];bonusSport?:string;shippingProfileId?:string;turnstileToken?:string};
   if(!Array.isArray(body.lines)||body.lines.length<1||body.lines.length>50)
    return error('Please check your cart items.',400);
   const seen=new Set<string>();
@@ -29,7 +29,7 @@ export async function POST(req:NextRequest){
   await verifyTurnstile(body.turnstileToken,'checkout',req);
   await assertExpectedStripeAccount();
   const reserved=await checkoutRpc<Reservation>('hcs_begin_checkout',{
-   p_items:items,p_preferred_sport:body.bonusSport||'Mixed'
+   p_items:items,p_preferred_sport:body.bonusSport||'Mixed',p_shipping_profile_id:typeof body.shippingProfileId==='string'&&/^[a-f0-9-]{36}$/i.test(body.shippingProfileId)?body.shippingProfileId:null
   });orderId=reserved.order_id;
   const params=new URLSearchParams();
   const add=(key:string,val:string|number)=>params.append(key,String(val));

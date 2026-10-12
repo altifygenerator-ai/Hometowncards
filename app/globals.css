@@ -182,3 +182,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .dealer-honeypot{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
 .dealer-error{color:#a72525;font-size:13px}.dealer-thanks{padding:25px;background:#f0f6fd;border:1px solid #d7e5f5;border-radius:8px}
 @media(max-width:850px){.dealer-grid{grid-template-columns:1fr;gap:24px}.dealer-tiers{grid-template-columns:1fr}.dealer-form-grid{grid-template-columns:1fr}}
+
+.cart-shipping-choices{padding:15px 0;display:grid;gap:10px}.cart-shipping-choices>strong{font-weight:800;color:var(--navy)}
+.cart-shipping-choice{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #ccdbea;border-radius:8px;background:#fff;cursor:pointer}
+.cart-shipping-choice:has(input:checked){border-color:#1778bf;background:#f3f9ff}
+.cart-shipping-choice input{accent-color:#1579c9}
+.cart-shipping-choice span{display:grid;gap:3px;flex:1;min-width:0}.cart-shipping-choice span small{color:#596d83;font-size:11px;line-height:1.45}
+.cart-shipping-total{font-size:13px;margin:5px 0 10px;color:#233f59}.cart-shipping-total strong{font-size:16px}
