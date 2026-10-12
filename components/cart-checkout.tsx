@@ -7,6 +7,19 @@ type Web=Window&{turnstile?:Api};
 type Option={profileId:string;service:string;shippingClass:'economy'|'tracked'|'insured';tracked:boolean;insuranceCoverageCents:number;chargeCents:number;weightOz:number};
 type Address={name:string;line1:string;line2:string;city:string;state:string;postalCode:string;country:'US'};
 type TaxQuote={taxCents:number;rate:number;totalCents:number;fingerprint:string};
+const STATE_CHOICES:ReadonlyArray<readonly [string,string]>=[
+ ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
+ ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],
+ ['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],
+ ['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
+ ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],
+ ['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],
+ ['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],
+ ['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],
+ ['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],['TN','Tennessee'],
+ ['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],['WA','Washington'],
+ ['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],['DC','District of Columbia'],
+];
 const siteKey=process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY||'';
 const live=process.env.NEXT_PUBLIC_STORE_LIVE==='true'&&process.env.NEXT_PUBLIC_CHECKOUT_ENABLED==='true';
 const money=(c:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(c/100);
@@ -40,29 +53,36 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
  },[lines]);
  useEffect(()=>()=>{abort.current?.abort()},[]);
  const opt=options?.find(x=>x.profileId===selected);
- const fingerprint=JSON.stringify({address,selected,subtotal,shipping:opt?.chargeCents});
+ const fingerprint=JSON.stringify({state:address.state,selected,subtotal,shipping:opt?.chargeCents});
+ const addressComplete=address.name.trim().length>=2&&address.line1.trim().length>=5&&address.city.trim().length>=2&&/^\d{5}(-\d{4})?$/.test(address.postalCode);
  const currentTax=tax?.fingerprint===fingerprint?tax:null;
  function editAddress(field:keyof Address,value:string){
-  abort.current?.abort();setQuoting(false);setTax(null);setError('');
+  if(field==='state'){abort.current?.abort();setQuoting(false);setTax(null);}
+  setError('');
   setAddress(a=>({...a,[field]:field==='state'?value.toUpperCase():value}));
  }
- async function calculateTax(){
-  if(quoting||!opt||subtotal===null)return;
-  const controller=new AbortController();abort.current?.abort();abort.current=controller;
+ // Recalculate automatically when the destination state, price or shipping service changes.
+ useEffect(()=>{
+  if(!opt||subtotal===null||!/^[A-Z]{2}$/.test(address.state))return;
+  const controller=new AbortController();
+  abort.current?.abort();abort.current=controller;
   setQuoting(true);setTax(null);setError('');
   const fingerprintAtRequest=fingerprint;
-  try{
-   const response=await fetch('/api/tax/quote',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({address,subtotalCents:subtotal,shippingCents:opt.chargeCents}),signal:controller.signal});
-   const data=await response.json() as Partial<TaxQuote>&{error?:string};
-   if(!response.ok||typeof data.taxCents!=='number'||typeof data.totalCents!=='number')
-    throw Error(data.error||'The sales-tax amount could not be calculated.');
-   if(!controller.signal.aborted)setTax({taxCents:data.taxCents,totalCents:data.totalCents,rate:data.rate??0,fingerprint:fingerprintAtRequest});
-  }catch(e){if(!controller.signal.aborted)setError(e instanceof Error?e.message:'Unable to verify the sales tax.')}
-  finally{if(!controller.signal.aborted)setQuoting(false);}
- }
+  fetch('/api/tax/quote',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({state:address.state,subtotalCents:subtotal,shippingCents:opt.chargeCents}),
+   signal:controller.signal})
+   .then(async response=>{const data=await response.json() as Partial<TaxQuote>&{error?:string};
+    if(!response.ok||typeof data.taxCents!=='number'||typeof data.totalCents!=='number')
+     throw Error(data.error||'Unable to calculate state sales tax.');
+    return data;})
+   .then(data=>{if(!controller.signal.aborted)setTax({taxCents:data.taxCents!,rate:data.rate??0,
+     totalCents:data.totalCents!,fingerprint:fingerprintAtRequest});})
+   .catch(e=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:'Unable to calculate state sales tax.');})
+   .finally(()=>{if(!controller.signal.aborted)setQuoting(false);});
+  return()=>controller.abort();
+ },[address.state,selected,subtotal,opt?.chargeCents]);
  async function submit(){
-  if(!live||!token||busy||!lines.length||!selected||!currentTax)return;
+  if(!live||!token||busy||!lines.length||!selected||!currentTax||!addressComplete)return;
   setBusy(true);setError('');
   try{
    const response=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -76,12 +96,14 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
   }finally{setBusy(false)}
  }
  const field=(key:keyof Address,label:string,props:{autoComplete?:string;placeholder?:string;pattern?:string}={})=><label key={key}>{label}
-  <input name={key} type="text" value={address[key]} onChange={e=>editAddress(key,e.target.value)}
+  {key==='state'?<select name="state" value={address.state} autoComplete="shipping address-level1" onChange={e=>editAddress('state',e.target.value)}>
+   {STATE_CHOICES.map(([code,name])=><option value={code} key={code}>{name} ({code})</option>)}
+  </select>:<input name={key} type="text" value={address[key]} onChange={e=>editAddress(key,e.target.value)}
    autoComplete={props.autoComplete||'off'} placeholder={props.placeholder||''}
    maxLength={key==='line1'?160:key==='line2'?90:key==='state'?2:key==='postalCode'?10:120}
-   required={key!=='line2'} pattern={props.pattern} inputMode={key==='postalCode'?'numeric':undefined}/>
+   required={key!=='line2'} pattern={props.pattern} inputMode={key==='postalCode'?'numeric':undefined}/>}
  </label>;
- const rateText=currentTax&&currentTax.rate>0?'Arkansas sales tax ('+(currentTax.rate*100).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'%)':'Sales tax';
+ const rateText=currentTax?address.state+' state base tax ('+(currentTax.rate*100).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'%)':'State sales tax';
  return <div className="cart-checkout-action">
   <section className="cart-shipping-choices" aria-label="Choose shipping">
    <strong>Shipping options</strong>
@@ -96,7 +118,7 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
   </section>
   <section className="hcs-checkout-address" aria-labelledby="hcs-shipping-heading">
    <h3 id="hcs-shipping-heading">Delivery address</h3>
-   <p>We calculate the applicable Arkansas state and local tax using the official tax-district boundaries. Some Arkansas ZIP codes require the full ZIP+4.</p>
+   <p>Sales tax is estimated automatically using your delivery state’s base rate. We don't add separate city or county taxes.</p>
    <div className="hcs-checkout-address-grid">
     {field('name','Full name',{autoComplete:'shipping name'})}
     {field('line1','Street address',{autoComplete:'shipping address-line1'})}
@@ -105,10 +127,9 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
     {field('state','State (2 letters)',{autoComplete:'shipping address-level1',placeholder:'AR',pattern:'[A-Za-z]{2}'})}
     {field('postalCode','ZIP code',{autoComplete:'shipping postal-code',placeholder:'71921',pattern:'[0-9]{5}(-[0-9]{4})?'})}
    </div>
-   <p className="hcs-checkout-address-help">United States shipping only. For an Arkansas address spanning local taxing districts, enter the full nine-digit ZIP+4 (e.g. 71921-1234). This address is saved with your order.</p>
+   <p className="hcs-checkout-address-help">United States shipping only. A regular five-digit ZIP code is fine. Your delivery address is saved with the order.</p>
   </section>
-  {<button className="button button-outline hcs-checkout-tax-button" type="button" onClick={calculateTax}
-   disabled={!opt||subtotal===null||quoting}>{quoting?'Checking address and tax…':'Calculate tax & order total'}</button>}
+  {quoting&&<p className="checkout-explainer" role="status">Updating state sales tax…</p>}
   {currentTax&&opt&&subtotal!==null&&<div className="hcs-tax-preview" role="status">
    <div><span>Cards</span><strong>{money(subtotal)}</strong></div>
    <div><span>Shipping</span><strong>{money(opt.chargeCents)}</strong></div>
@@ -121,9 +142,9 @@ export function CartCheckout({lines,bonusSport}:{lines:CartLine[];bonusSport:str
    <>
     {siteKey?<><Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onLoad={render}/><div ref={el} aria-label="Security check"/></>:<p>Security verification is temporarily unavailable.</p>}
     {error&&<p className="portal-error" role="alert">{error}</p>}
-    <button className="button button-primary" disabled={busy||!token||!currentTax||!selected||!lines.length}
+    <button className="button button-primary" disabled={busy||!token||!currentTax||!selected||!lines.length||!addressComplete}
       onClick={submit}>{busy?'Opening secure checkout…':'Pay securely with Stripe →'}</button>
-    {!currentTax&&<p className="checkout-explainer">Enter your address and calculate your total before payment.</p>}
+    {!currentTax&&<p className="checkout-explainer">Choose your state and finish the delivery address to continue.</p>}
    </>}
  </div>;
 }
