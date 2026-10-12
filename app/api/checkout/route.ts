@@ -1,7 +1,8 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {PortalError} from '@/lib/server/portal';
 import {checkoutRpc} from '@/lib/server/checkout-db';
-import {stripePost,assertExpectedStripeAccount,assertArkansasSalesTaxReady} from '@/lib/server/stripe';
+import {stripePost,assertExpectedStripeAccount} from '@/lib/server/stripe';
+import {parseCheckoutAddress,quoteManualSalesTax,assertManualTaxCollectionReady} from '@/lib/server/manual-sales-tax';
 import {verifyTurnstile} from '@/lib/server/turnstile';
 export const runtime='nodejs';
 type Line={id:string;quantity:number};
@@ -10,13 +11,13 @@ function error(message:string,status=503){return NextResponse.json({error:messag
 export async function POST(req:NextRequest){
  if(process.env.NEXT_PUBLIC_STORE_LIVE!=='true'||process.env.STRIPE_CHECKOUT_ENABLED!=='true')
   return error('Online checkout is not open yet.');
- if(process.env.STRIPE_AUTOMATIC_TAX!=='true')return error('Tax configuration is not ready.');
+
  if(!process.env.STRIPE_SECRET_KEY||!process.env.STRIPE_WEBHOOK_SECRET)return error('Secure checkout is not configured.');
  const origin=req.headers.get('origin');
  if(origin&&new URL(origin).host!==req.nextUrl.host)return error('Checkout request origin is not allowed.',403);
  let orderId:string|null=null;let sessionId:string|null=null;
  try{
-  const body=await req.json() as {lines?:Line[];bonusSport?:string;shippingProfileId?:string;turnstileToken?:string};
+  const body=await req.json() as {lines?:Line[];bonusSport?:string;shippingProfileId?:string;turnstileToken?:string;address?:unknown};
   if(!Array.isArray(body.lines)||body.lines.length<1||body.lines.length>50)
    return error('Please check your cart items.',400);
   const seen=new Set<string>();
@@ -26,21 +27,28 @@ export async function POST(req:NextRequest){
       throw new PortalError('Invalid shopping cart.',400);
    seen.add(x.id);return {id:x.id,quantity:x.quantity};
   });
+  const address=parseCheckoutAddress(body.address);
+  assertManualTaxCollectionReady(address);
   await verifyTurnstile(body.turnstileToken,'checkout',req);
   await assertExpectedStripeAccount();
-  await assertArkansasSalesTaxReady();
+
   const reserved=await checkoutRpc<Reservation>('hcs_begin_checkout',{
    p_items:items,p_preferred_sport:body.bonusSport||'Mixed',p_shipping_profile_id:typeof body.shippingProfileId==='string'&&/^[a-f0-9-]{36}$/i.test(body.shippingProfileId)?body.shippingProfileId:null
   });orderId=reserved.order_id;
+  const manualTax=await quoteManualSalesTax(address,reserved.subtotal_cents,reserved.shipping_cents);
+  await checkoutRpc('hcs_apply_manual_checkout_tax',{
+   p_order:orderId,p_shipping:{name:address.name,address:{line1:address.line1,line2:address.line2,city:address.city,state:address.state,postal_code:address.postalCode,country:'US'}},
+   p_tax_cents:manualTax.taxCents,p_rate:manualTax.rate,p_source:manualTax.source
+  });
   const params=new URLSearchParams();
   const add=(key:string,val:string|number)=>params.append(key,String(val));
   add('mode','payment');add('client_reference_id',orderId);
   add('metadata[order_id]',orderId);add('payment_intent_data[metadata][order_id]',orderId);
   add('success_url',req.nextUrl.origin+'/checkout/success?session_id={CHECKOUT_SESSION_ID}');
   add('cancel_url',req.nextUrl.origin+'/cart?checkout=cancelled');
-  add('shipping_address_collection[allowed_countries][0]','US');
+  // Shipping address is collected and locked on our site BEFORE the tax quote.
   add('billing_address_collection','auto');
-  add('automatic_tax[enabled]','true');
+  add('automatic_tax[enabled]','false');
   add('expires_at',Math.floor(Date.now()/1000)+30*60);
   // Card supports major wallets where available. Do not enable delayed settlement methods.
   add('payment_method_types[0]','card');
@@ -50,15 +58,21 @@ export async function POST(req:NextRequest){
    add(`line_items[${i}][price_data][product_data][name]`,item.title.slice(0,120));
    add(`line_items[${i}][quantity]`,item.quantity);
   });
-  // Use a real shipping rate rather than classifying postage as a tangible product.
-  // Stripe Tax applies destination-specific treatment to shipping (txcd_92010001).
+  // Shipping is included in the Arkansas taxable base and charged once here.
   if(reserved.shipping_cents>0){
    add('shipping_options[0][shipping_rate_data][type]','fixed_amount');
    add('shipping_options[0][shipping_rate_data][display_name]',reserved.shipping_service||'Shipping');
    add('shipping_options[0][shipping_rate_data][fixed_amount][currency]','usd');
    add('shipping_options[0][shipping_rate_data][fixed_amount][amount]',reserved.shipping_cents);
-   add('shipping_options[0][shipping_rate_data][tax_behavior]','exclusive');
-   add('shipping_options[0][shipping_rate_data][tax_code]','txcd_92010001');
+
+  }
+  // Customer sees sales tax as a standalone line item at Stripe Checkout.
+  if(manualTax.taxCents>0){
+   const idx=reserved.items.length;
+   add(`line_items[${idx}][price_data][currency]`,'usd');
+   add(`line_items[${idx}][price_data][unit_amount]`,manualTax.taxCents);
+   add(`line_items[${idx}][price_data][product_data][name]`,'Arkansas sales tax');
+   add(`line_items[${idx}][quantity]`,1);
   }
   const session=await stripePost('checkout/sessions',params,'hcs-session-'+orderId);
   if(!session.id||!session.url||!session.url.startsWith('https://checkout.stripe.com/'))
