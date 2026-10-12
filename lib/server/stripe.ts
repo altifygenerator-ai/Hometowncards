@@ -19,29 +19,6 @@ export async function assertExpectedStripeAccount(){
   throw new PortalError('This Stripe account is not ready to accept payments.',503);
 }
 
-/**
- * A valid business tax address is NOT a sales-tax permit.
- * Never open real Checkout if Stripe has no active Arkansas sales-tax registration.
- * State/local amounts must be destination-calculated by Stripe Tax, not a flat AR rate.
- */
-export async function assertArkansasSalesTaxReady(){
- const secret=process.env.STRIPE_SECRET_KEY;
- if(!secret)throw new PortalError('Payments have not been configured.',503);
- const headers={Authorization:'Bearer '+secret};
- const [settingsResponse,registrationsResponse]=await Promise.all([
-  fetch('https://api.stripe.com/v1/tax/settings',{headers,cache:'no-store'}),
-  fetch('https://api.stripe.com/v1/tax/registrations?status=active&limit=100',{headers,cache:'no-store'})
- ]);
- if(!settingsResponse.ok||!registrationsResponse.ok)
-  throw new PortalError('Tax registration could not be verified.',503);
- const settings=await settingsResponse.json() as {status?:string};
- const registrations=await registrationsResponse.json() as {data?:Array<{country?:string;status?:string;country_options?:{us?:{state?:string;type?:string}}}>;has_more?:boolean};
- if(settings.status!=='active'||!registrations.data?.some(r=>
-  r.status==='active'&&r.country==='US'&&r.country_options?.us?.state==='AR'&&
-  r.country_options.us.type==='state_sales_tax'))
-  throw new PortalError('Arkansas sales-tax registration is required before checkout opens.',503);
-}
-
 export async function stripePost<T=StripeCheckoutSession>(path:string,fields:URLSearchParams,idempotencyKey?:string):Promise<T>{
  const secret=process.env.STRIPE_SECRET_KEY;
  if(!secret)throw new PortalError('Payments are not configured yet.',503);
