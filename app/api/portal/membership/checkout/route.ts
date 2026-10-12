@@ -11,10 +11,12 @@ export async function POST(req:NextRequest){
   await assertExpectedStripeAccount();
   const price=process.env.STRIPE_SELLER_STARTER_PRICE_ID;
   if(!price)throw new PortalError('Membership pricing is not configured.',503);
-  const [tiers,memberships]=await Promise.all([
-   db<Array<{stripe_price_id:string;monthly_fee_cents:number}>>('seller_pricing_tiers?select=stripe_price_id,monthly_fee_cents&code=eq.starter&active=eq.true&limit=1'),
-   db<Array<{stripe_subscription_id:string;status:string}>>('seller_memberships?select=stripe_subscription_id,status&seller_id=eq.'+c.sellerId+'&limit=1')
+  const [tiers,memberships,settings]=await Promise.all([
+   db<Array<{stripe_price_id:string;monthly_fee_cents:number;signup_open:boolean}>>('seller_pricing_tiers?select=stripe_price_id,monthly_fee_cents,signup_open&code=eq.starter&active=eq.true&limit=1'),
+   db<Array<{stripe_subscription_id:string;status:string}>>('seller_memberships?select=stripe_subscription_id,status&seller_id=eq.'+c.sellerId+'&limit=1'),
+   db<Array<{seller_signup_enabled:boolean}>>('marketplace_settings?select=seller_signup_enabled&id=eq.true&limit=1')
   ]);
+  if(!settings[0]?.seller_signup_enabled||!tiers[0]?.signup_open)throw new PortalError('Seller memberships are not open yet.',503);
   if(tiers[0]?.stripe_price_id!==price||tiers[0]?.monthly_fee_cents!==599)throw new PortalError('Starter membership price does not match the platform.',503);
   if(memberships[0]&&!['canceled','incomplete_expired'].includes(memberships[0].status))
    throw new PortalError('Manage your existing membership in your billing settings.',409);
