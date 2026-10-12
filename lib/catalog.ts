@@ -74,21 +74,23 @@ export function recommended(count=8, source: Product[] = inventory){
  function take(pool:Product[]){
   let best:Product|undefined;let score=Infinity;
   for(const p of pool){
-   if(selected.has(p.id))continue;
+   if(selected.has(`${p.sellerId}:${p.id}`))continue;
    const n=sportsSeen.get(p.sport)||0;
    if(n<score){best=p;score=n;if(n===0)break;}
   }
   if(!best)return false;
-  picked.push(best);selected.add(best.id);
+  picked.push(best);selected.add(`${best.sellerId}:${best.id}`);
   sportsSeen.set(best.sport,(sportsSeen.get(best.sport)||0)+1);
   return true;
  }
  const tiers=Object.keys(pools) as Array<keyof typeof pools>;
  for(let i=0;picked.length<Math.min(limit,priced.length);i++){
   const preferred=cadence[i%cadence.length];
-  if(!take(pools[preferred])){
-   for(const tier of tiers){if(take(pools[tier]))break;}
+  let added=take(pools[preferred]);
+  if(!added){
+   for(const tier of tiers){if(take(pools[tier])){added=true;break;}}
   }
+  if(!added)break;
  }
  return picked;
 }
