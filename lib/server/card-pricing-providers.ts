@@ -12,6 +12,8 @@ export type SourceObservation={
  title:string;kind:'sold'|'asking'|'guide';
  priceCents:number;shippingCents:number|null;currency:string;
  observedAt:string|null;variant:string;grade:string;conditionNotes:string;
+ /** These must be populated by the independently authorized provider adapter, NEVER by a web search model. */
+ transactionStatus:'completed'|'unknown';matchScore:number;matchReason:string;
 };
 export type SourceBatch={provider:ProviderId;observations:SourceObservation[];receivedAt:string;retrievalMethod:string};
 export interface PricingSourceAdapter{
