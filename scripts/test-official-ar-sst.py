@@ -36,6 +36,7 @@ assert len(rates) >= 80, "Rate table unexpectedly small"
 boundaries = 0
 zips = set()
 zip4s = 0
+sample_zip4 = None
 with zipfile.ZipFile(io.BytesIO(download(URL_BOUNDARY))) as zf:
     members = [n for n in zf.namelist() if n.lower().endswith((".csv",".txt"))]
     assert members, "No CSV in official boundary archive"
@@ -50,8 +51,13 @@ with zipfile.ZipFile(io.BytesIO(download(URL_BOUNDARY))) as zf:
                 boundaries += 1
                 if row[0] == "4":
                     zip4s += 1
+                    if not sample_zip4 and len(row[17])==5 and len(row[18])==4 and row[17].isdigit() and row[18].isdigit():
+                        sample_zip4 = row[17] + '-' + row[18]
                 if len(row[17]) == 5:
                     zips.add(row[17])
 assert len(zips) >= 100, "Boundary file missing ZIP coverage"
 assert boundaries >= 1000 and zip4s >= 100, "Boundary file incomplete"
-print(f"Official 2026 Q4 Arkansas tax sources OK: {len(rates)} jurisdiction rates, {boundaries} boundaries, {zip4s} ZIP+4 rows, {len(zips)} postal areas")
+assert sample_zip4, "No valid ZIP+4 in official SST boundaries"
+with open('/tmp/hcs-ar-sample-zip.txt','w',encoding='ascii') as out:
+    out.write(sample_zip4)
+print(f"Official 2026 Q4 Arkansas tax sources OK: {len(rates)} jurisdiction rates, {boundaries} boundaries, {zip4s} ZIP+4 rows, {len(zips)} postal areas, sample={sample_zip4}")
