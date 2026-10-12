@@ -14,3 +14,31 @@ export async function PATCH(req:NextRequest){try{
  const updated=await db<number>('rpc/portal_bulk_edit',{method:'POST',body:JSON.stringify({p_seller_id:sellerId,p_actor:userId,p_ids:ids,p_action:action,p_value:body.value==null?null:String(body.value).slice(0,200)})});
  return json({ok:true,changed:updated});
 }catch(err){return failure(err)}}
+
+export async function POST(req:NextRequest){try{
+ const {sellerId,userId}=await authorized(req,'manage');
+ const raw=await req.text();if(raw.length>14000)throw new PortalError('Listing is too large.',413);
+ const body=JSON.parse(raw) as Record<string,unknown>;
+ const title=safeTerm(body.title,250),sku=safeTerm(body.sku,120);
+ const price=Math.round(Number(body.price)*100),stock=Number(body.stock);
+ if(title.length<2||!sku)throw new PortalError('Enter a title and SKU.');
+ if(!Number.isSafeInteger(price)||price<1||price>100000000)throw new PortalError('Enter a valid card price.');
+ if(!Number.isInteger(stock)||stock<0||stock>100000)throw new PortalError('Enter a valid stock quantity.');
+ const existing=await db<Array<{id:string}>>('products?select=id&seller_id=eq.'+sellerId+'&sku=eq.'+encodeURIComponent(sku)+'&limit=1');
+ if(existing.length)throw new PortalError('You already have a card with that SKU.',409);
+ const item={
+  seller_id:sellerId,source:'manual',source_item_id:crypto.randomUUID(),sku,title,
+  description:safeTerm(body.description,4000),price_cents:price,stock,
+  status:stock>0?'published':'sold_out',
+  needs_review:true,manual_paused:false,
+  sport:safeTerm(body.sport,80)||'Other Cards',team:safeTerm(body.team,100),
+  player:safeTerm(body.player,120),card_year:safeTerm(body.card_year,4),
+  card_set:safeTerm(body.card_set,120),card_number:safeTerm(body.card_number,40),
+  condition:safeTerm(body.condition,100),category:safeTerm(body.category,120),
+  inventory_location:safeTerm(body.inventory_location,100),last_edited_by:userId
+ };
+ const created=await db<Array<{id:string}>>('products',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});
+ if(!created[0]?.id)throw new PortalError('The listing could not be created.',502);
+ await audit(sellerId,userId,'listing_created',created[0].id,null,{sku,title,price,stock});
+ return json({ok:true,id:created[0].id},201);
+}catch(e){return failure(e)}}
