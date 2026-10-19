@@ -17,5 +17,5 @@ const malformed=await fetch(local,{method:'POST',
  headers:{'Content-Type':'application/json'},
  body:JSON.stringify({metadata:{topic:'MARKETPLACE_ACCOUNT_DELETION'},
  notification:{notificationId:'test-invalid-signature-001',data:{username:'fake-account'}}})});
-assert.notEqual(malformed.status,204,'unsigned POST must never erase seller data');
+assert.equal(malformed.status,412,'eBay requires a 412 rejection for unsigned or invalidly signed POST requests');
 console.log('Official eBay endpoint GET challenge and POST signature protection passed');
