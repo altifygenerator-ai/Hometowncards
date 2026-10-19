@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {db} from '@/lib/server/portal';
 import {
- deletionChallengeResponse,ebayIdentityHash,verifyEbayNotification
+ deletionChallengeResponse,ebayIdentityHash,verifyEbayNotification,EbayInvalidNotificationSignature
 } from '@/lib/server/ebay-deletion';
 export const runtime='nodejs';
 export const maxDuration=40;
@@ -52,7 +52,9 @@ export async function POST(req:NextRequest){
   // Retry on unverified or unprocessed notification. Do not log user identifiers.
   console.error('eBay deletion notification rejected or failed',
    e instanceof Error?e.message:'unknown');
+  // eBay's documented contract uses 412 for invalid signatures and 503 only
+  // for temporary failures such as key retrieval or database processing.
   return NextResponse.json({error:'Notification could not be processed.'},
-   {status:503,headers});
+   {status:e instanceof EbayInvalidNotificationSignature?412:503,headers});
  }
 }

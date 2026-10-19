@@ -23,6 +23,8 @@ jobs:
         run: node scripts/test-ebay-integration-guards.mjs
       - name: Card-only eBay category and reconciliation safeguards
         run: node scripts/test-ebay-card-only.mjs
+      - name: Verify eBay ECDSA-SHA1 signature handling
+        run: node scripts/test-ebay-signed-notification.mjs
       - name: Next.js build
         run: npm run build
         env:

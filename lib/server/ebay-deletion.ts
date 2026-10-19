@@ -1,10 +1,12 @@
 import 'server-only';
-import {createHash,createHmac,createPublicKey,createVerify} from 'node:crypto';
+import {createHash,createHmac,createPublicKey} from 'node:crypto';
+import {verifyEbayEccSignature} from '@/lib/server/ebay-signature';
 
 const ENDPOINT='https://www.hometowncardshop.com/api/ebay/marketplace-account-deletion';
 const publicKeys=new Map<string,{pem:string,expiresAt:number}>();
 let appToken:{value:string,expiresAt:number}|null=null;
 export function deletionEndpoint(){return ENDPOINT;}
+export class EbayInvalidNotificationSignature extends Error {}
 
 /**
  * eBay challenges the exact HTTPS destination URL (not an OAuth RuName).
@@ -63,17 +65,21 @@ async function getSigningKey(kid:string):Promise<string>{
  return pem;
 }
 export async function verifyEbayNotification(message:unknown,signatureHeader:string|null){
- if(!signatureHeader||signatureHeader.length>2500)throw new Error('eBay signature header missing');
- let decoded:{kid?:string,signature?:string};
+ if(!signatureHeader||signatureHeader.length>2500)throw new EbayInvalidNotificationSignature('eBay signature header missing');
+ let decoded:{kid?:string,signature?:string,alg?:string,digest?:string};
  try{decoded=JSON.parse(Buffer.from(signatureHeader,'base64').toString('utf8'))}
- catch{throw new Error('Invalid eBay signature header');}
+ catch{throw new EbayInvalidNotificationSignature('Invalid eBay signature header');}
  if(!decoded.kid||!decoded.signature||
   !/^[A-Za-z0-9_-]{1,150}$/.test(decoded.kid)||
   !/^[A-Za-z0-9+/=]{70,3000}$/.test(decoded.signature))
-  throw new Error('Invalid eBay signing key or signature');
+  throw new EbayInvalidNotificationSignature('Invalid eBay signing key or signature');
+ if(decoded.alg&&decoded.alg.toLowerCase()!=='ecdsa')
+  throw new EbayInvalidNotificationSignature('Unsupported eBay signing algorithm');
+ if(decoded.digest&&decoded.digest.toUpperCase()!=='SHA1')
+  throw new EbayInvalidNotificationSignature('Unsupported eBay signature digest');
  const pem=await getSigningKey(decoded.kid);
- const verifier=createVerify('sha256');
- verifier.update(JSON.stringify(message),'utf8');verifier.end();
- if(!verifier.verify(pem,decoded.signature,'base64'))
-  throw new Error('The eBay notification signature could not be verified');
+ // Match eBay's official Node SDK: verify the original parsed JSON message
+ // serialization with ECDSA/SHA-1 and the public key fetched from eBay.
+ if(!verifyEbayEccSignature(JSON.stringify(message),decoded.signature,pem))
+  throw new EbayInvalidNotificationSignature('The eBay notification signature could not be verified');
 }
