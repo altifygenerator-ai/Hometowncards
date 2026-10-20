@@ -25,7 +25,9 @@ function mapListing(x:PageItem):Listing|null{
  const quantity=Number.isFinite(quantityAvailable)&&quantityAvailable>=0
   ?quantityAvailable
   :Number(xmlText(x.Quantity)||0)-Number(xmlText((x.SellingStatus as Record<string,unknown>)?.QuantitySold)||0);
- if(!Number.isInteger(price)||price<1||!Number.isInteger(quantity)||quantity<0)return null;
+ // Allow zero-price unrelated listing records through to the SQL hide filter;
+ // only verified cards or sports plates may be inserted, and those require a positive price.
+ if(!Number.isInteger(price)||price<0||!Number.isInteger(quantity)||quantity<0)return null;
  const photos=x.PictureDetails as Record<string,unknown>|undefined;
  const images=xmlList(photos?.PictureURL as unknown).map(xmlText).filter(validHttps);
  const category=xmlText((x.PrimaryCategory as Record<string,unknown>)?.CategoryName).slice(0,120);
