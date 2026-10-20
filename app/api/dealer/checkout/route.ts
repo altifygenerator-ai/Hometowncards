@@ -6,6 +6,10 @@ import {verifyTurnstile} from '@/lib/server/turnstile';
 export const runtime='nodejs';export const maxDuration=60;
 type Deal={order_id:string;seller_id:string;connected_account_id:string;subtotal_cents:number;shipping_cents:number;platform_fee_cents:number;items:Array<{product_id:string;title:string;unit_price_cents:number;quantity:number}>;shipping_service:string};
 const err=(message:string,status=503)=>NextResponse.json({error:message},{status,headers:{'Cache-Control':'no-store'}});
+export async function GET(){
+ const flags=await db<Array<{dealer_checkout_enabled:boolean}>>('marketplace_settings?select=dealer_checkout_enabled&id=eq.true&limit=1');
+ return NextResponse.json({available:process.env.DEALER_CHECKOUT_ENABLED==='true'&&!!process.env.STRIPE_CONNECT_WEBHOOK_SECRET&&flags[0]?.dealer_checkout_enabled===true},{headers:{'Cache-Control':'no-store'}});
+}
 export async function POST(req:NextRequest){
  if(process.env.DEALER_CHECKOUT_ENABLED!=='true'||process.env.STRIPE_CONNECT_WEBHOOK_SECRET===undefined)return err('Dealer checkouts are not open yet.');
  const origin=req.headers.get('origin');if(origin&&new URL(origin).host!==req.nextUrl.host)return err('Origin not accepted',403);
