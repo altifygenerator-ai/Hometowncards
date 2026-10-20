@@ -49,7 +49,7 @@ export function StickyCart(){
 
  // Checkout and admin screens already have their own navigation and controls.
  if(!ready||pathname==='/cart'||pathname.startsWith('/checkout')||pathname.startsWith('/admin'))return null;
- const hometownSubtotal=lines.filter(line=>line.sellerName==='Hometown Card Shop').reduce((n,line)=>n+line.price*line.quantity,0);
+ const hometownSubtotal=lines.filter(line=>line.sellerSlug==='hometown-card-shop').reduce((n,line)=>n+line.price*line.quantity,0);
  const bonuses=bonusCount(hometownSubtotal);
 
  return <>
