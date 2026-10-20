@@ -1,18 +1,4 @@
 import Link from 'next/link';
-import {SellerInterestForm} from '@/components/seller-interest-form';
-export const metadata={title:'Interested in Selling Cards? | Hometown Card Shop',description:'Have a collection of sports or trading cards to sell? Let Hometown Card Shop know you might be interested in selling here someday.',robots:{index:false,follow:true}};
-export default function SellPage(){return <><section className="inner-hero"><div className="shell">
- <span className="kicker">JUST GAUGING INTEREST</span>
- <h1>Interested in selling cards here?</h1>
- <p>We’re considering ways to welcome other card collectors and independent sellers in the future. Nothing is open for signup yet, but we’d like to hear from you.</p>
- </div></section>
- <section className="shell dealer-landing"><div className="dealer-grid">
- <div className="dealer-benefits"><span className="kicker">TELL US ABOUT YOUR COLLECTION</span>
- <h2>Got some cards to sell?</h2>
- <p>Whether you have a few boxes of vintage baseball cards or thousands of singles, let us know what you sell and where you sell now.</p>
- <p>This is simply an interest list. There are no accounts to open, no fees to pay, and no commitment. We’ll only reach out if we begin inviting other sellers.</p>
- <Link href="/shop" className="corner-text-link">Back to browsing cards →</Link>
- </div>
- <section className="dealer-form-wrap" id="interest"><span className="kicker">SELLER INTEREST FORM</span>
- <h2>Tell us a little about yourself.</h2><SellerInterestForm/></section>
- </div></section></>}
+import {SellerRegistration} from '@/components/portal/seller-registration';
+export const metadata={title:'Open a Card Shop | Hometown Card Shop',description:'Apply to open your own independent sports card shop, manage listings, connect eBay, import CSV cards, and receive payments with Stripe Connect.'};
+export default function SellPage(){return <><section className="inner-hero"><div className="shell"><span className="kicker">INDEPENDENT CARD DEALERS</span><h1>Open your own card shop.</h1><p>List your cards alongside Hometown Card Shop and manage your own inventory, shipping, orders, and payouts.</p></div></section><section className="shell dealer-landing"><div className="dealer-grid"><div className="dealer-benefits"><span className="kicker">YOUR SHOP, YOUR CARDS</span><h2>Sell more cards without building another website.</h2><p>Bring your existing eBay inventory or upload a CSV of your cards. Add and edit individual listings, set prices and shipping, and manage orders from your own private dashboard.</p><p>Each seller runs a separate deal and checkout. Your payouts go to your Stripe Connect account. Hometown Card Shop's free-card offer applies only to cards sold by Hometown itself.</p><h3>Simple dealer pricing</h3><p><strong>Pay As You Sell:</strong> no monthly fee and 2% of merchandise sales.</p><p><strong>Starter:</strong> $5.99 per month and 0% marketplace commission. Processing fees still apply.</p><p>Every account is reviewed. Stripe onboarding and tax/shipping setup must be completed before your storefront starts selling.</p><Link href="/admin" className="corner-text-link">Already have an account? Sign in →</Link></div><section className="dealer-form-wrap"><span className="kicker">SELLER APPLICATION</span><h2>Start your shop.</h2><SellerRegistration/></section></div></section></>}
