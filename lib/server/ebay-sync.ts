@@ -1,10 +1,10 @@
 import 'server-only';
 import {db,PortalError} from '@/lib/server/portal';
 import {getAccessToken,getConnection,tradingCall,xmlList,xmlText,ebayGetOrders} from '@/lib/server/ebay';
-import {classifyEbayCardCategory} from '@/lib/ebay-card-categories';
+import {ebayItemAspects,ebayListingMetadata} from '@/lib/ebay-product-metadata';
 
 type PageItem=Record<string,unknown>;
-type Listing={id:string;categoryId:string;sku?:string;title?:string;price?:number;quantity?:number;category?:string;image?:string;back?:string;sport?:string};
+type Listing={id:string;categoryId:string;sku:string;title:string;price:number;quantity:number;category:string;image:string;back:string;sport:string;team:string;player:string;year:string;cardSet:string;cardNumber:string};
 type Paged={items:Listing[];total:number;pages:number};
 type Conn={seller_id:string;listing_page:number;listing_total:number|null;listing_pages:number|null;listing_started_at:string|null;
  last_order_sync_at:string|null;last_listing_sync_at:string|null;sync_mode:string;created_at:string};
@@ -15,23 +15,27 @@ function mapListing(x:PageItem):Listing|null{
  if(!/^\d{9,22}$/.test(id))return null;
  const categoryNode=x.PrimaryCategory as Record<string,unknown>|undefined;
  const categoryId=xmlText(categoryNode?.CategoryID).trim();
- const disposition=classifyEbayCardCategory(categoryId);
- // eBay non-cards are returned as IDs only: the database hides existing
- // imported copies but never deletes or alters listings on eBay.
- if(disposition!=='card')return {id,categoryId};
+ // GetMyeBaySelling omits PrimaryCategory on many eBay accounts. Always send
+ // title and listing details; the server-side SQL allowlist classifies items.
+ // A missing title is not safe to import or hide automatically.
  if(title.length<2)return null;
  const price=Math.round(Number(xmlText((x.SellingStatus as Record<string,unknown>)?.CurrentPrice||x.StartPrice))*100);
- const quantityAvailable=Number(xmlText(x.QuantityAvailable));
+ const availableText=xmlText(x.QuantityAvailable);
+ const quantityAvailable=availableText===''?Number.NaN:Number(availableText);
  const quantity=Number.isFinite(quantityAvailable)&&quantityAvailable>=0
   ?quantityAvailable
   :Number(xmlText(x.Quantity)||0)-Number(xmlText((x.SellingStatus as Record<string,unknown>)?.QuantitySold)||0);
- if(!Number.isInteger(price)||price<1||!Number.isInteger(quantity)||quantity<0)return null;
+ // Allow zero-price unrelated listing records through to the SQL hide filter;
+ // only verified cards or sports plates may be inserted, and those require a positive price.
+ if(!Number.isInteger(price)||price<0||!Number.isInteger(quantity)||quantity<0)return null;
  const photos=x.PictureDetails as Record<string,unknown>|undefined;
  const images=xmlList(photos?.PictureURL as unknown).map(xmlText).filter(validHttps);
  const category=xmlText((x.PrimaryCategory as Record<string,unknown>)?.CategoryName).slice(0,120);
- const sport=['Baseball','Basketball','Football','Hockey','Soccer','Golf'].find(s=>
+ const details=ebayListingMetadata(title,ebayItemAspects(x));
+ const sport=details.sport||['Baseball','Basketball','Football','Hockey','Soccer','Golf','Racing'].find(s=>
   (title+' '+category).toLowerCase().includes(s.toLowerCase()))||'Other Cards';
  return {id,categoryId,sku:xmlText(x.SKU).slice(0,120),title:title.slice(0,250),price,quantity,category,sport,
+  team:details.team,player:details.player,year:details.year,cardSet:details.cardSet,cardNumber:details.cardNumber,
   image:images[0]||validHttps(xmlText(photos?.GalleryURL)),back:images[1]||''};
 }
 async function getPage(access:string,page:number):Promise<Paged>{
@@ -131,7 +135,8 @@ async function checkListing(access:string,id:string){
  const item=root.Item as Record<string,unknown>|undefined;
  const sold=Number(xmlText((item?.SellingStatus as Record<string,unknown>|undefined)?.QuantitySold)||0);
  const qty=Number(xmlText(item?.Quantity)||0);
- const available=Number(xmlText(item?.QuantityAvailable));
+ const availableText=xmlText(item?.QuantityAvailable);
+ const available=availableText===''?Number.NaN:Number(availableText);
  const remaining=Number.isFinite(available)&&available>=0?available:Math.max(0,qty-sold);
  const status=xmlText((item?.SellingStatus as Record<string,unknown>|undefined)?.ListingStatus);
  if(!Number.isFinite(remaining)||remaining<0||remaining>100000)return {remaining:-1,status};

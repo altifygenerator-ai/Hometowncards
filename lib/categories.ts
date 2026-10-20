@@ -20,6 +20,7 @@ export const SHELVES:Shelf[] = [
  {slug:'sealed',name:'Sealed packs & boxes',emoji:'▣',description:'Unopened trading card products',sport:'Sealed',group:'Other cards & collectibles'},
  {slug:'card-lots',name:'Card lots & bundles',emoji:'▤',description:'More cardboard in one purchase',sport:'Card Lots',group:'Shop extras'},
  {slug:'supplies',name:'Card supplies',emoji:'▯',description:'Storage, sleeves and protection',sport:'Supplies',group:'Shop extras'},
+ {slug:'sports-memorabilia',name:'Sports memorabilia',emoji:'🏟️',description:'NFL and other sports license plates and fan collectibles',sport:'Memorabilia',group:'Other cards & collectibles'},
  {slug:'collectibles',name:'Vintage & other finds',emoji:'★',description:'Books, memorabilia, games and oddities',sport:'Collectibles',group:'Other cards & collectibles'},
  ];
 export function shelvesWithCounts(products:Product[]){

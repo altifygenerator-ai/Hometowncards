@@ -10,7 +10,7 @@ export async function getCatalog():Promise<Product[]>{
  try{
   const result:Product[]=[];
   for(let offset=0;offset<15000;offset+=1000){
-   const u=`${url}/rest/v1/products?select=*,sellers!inner(slug,display_name,status)&sellers.status=eq.approved&status=eq.published&stock=gt.0&needs_review=eq.false&manual_paused=eq.false&order=created_at.desc&offset=${offset}&limit=1000`;
+   const u=`${url}/rest/v1/products?select=*,sellers!inner(slug,display_name,status)&sellers.status=eq.approved&status=eq.published&stock=gt.0&needs_review=eq.false&manual_paused=eq.false&or=(source.neq.ebay,ebay_storefront_kind.in.(card,sports_plate))&order=created_at.desc&offset=${offset}&limit=1000`;
    const res=await fetch(u,{headers:{apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key})},next:{revalidate:90}});
    if(!res.ok)throw new Error('Catalog DB returned '+res.status);
    const rows=await res.json() as Array<Record<string,unknown>>;
