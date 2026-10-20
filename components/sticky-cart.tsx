@@ -49,7 +49,8 @@ export function StickyCart(){
 
  // Checkout and admin screens already have their own navigation and controls.
  if(!ready||pathname==='/cart'||pathname.startsWith('/checkout')||pathname.startsWith('/admin'))return null;
- const bonuses=bonusCount(subtotal);
+ const hometownSubtotal=lines.filter(line=>line.sellerName==='Hometown Card Shop').reduce((n,line)=>n+line.price*line.quantity,0);
+ const bonuses=bonusCount(hometownSubtotal);
 
  return <>
   <button ref={triggerRef} type="button" className="hcs-cart-fab" onClick={()=>setOpen(true)}
@@ -79,7 +80,7 @@ export function StickyCart(){
          {line.image?<img src={line.image} alt="" loading="lazy" referrerPolicy="no-referrer"/>:<Icon name="bag" size={24}/>}
         </Link>
         <div className="hcs-cart-item-content">
-         <span className="hcs-cart-item-sport">{line.sport}</span>
+         <span className="hcs-cart-item-sport">{line.sport} · {line.sellerName}</span>
          <Link href={'/cards/'+encodeURIComponent(line.id)} onClick={()=>setOpen(false)} className="hcs-cart-item-title">{line.title}</Link>
          <span className="hcs-cart-item-price">{formatMoney(line.price)} each</span>
          <div className="hcs-cart-item-controls">
@@ -98,10 +99,10 @@ export function StickyCart(){
        </article>)}
       </div>
       <div className="hcs-cart-drawer-bottom">
-       {bonuses>0?<div className="hcs-cart-bonus"><Icon name="gift" size={17}/>{bonuses} free bonus {bonuses===1?'card':'cards'} with this order</div>:null}
+       {bonuses>0?<div className="hcs-cart-bonus"><Icon name="gift" size={17}/>{bonuses} free bonus {bonuses===1?'card':'cards'} from Hometown Card Shop purchases</div>:null}
        <div className="hcs-cart-subtotal"><span>Subtotal <small>({count} {count===1?'card':'cards'})</small></span><strong>{formatMoney(subtotal)}</strong></div>
        <p>Shipping and any applicable taxes are calculated at checkout.</p>
-       <Link href="/cart#cart-checkout" className="hcs-cart-checkout" onClick={()=>setOpen(false)}>Review cart &amp; checkout <Icon name="arrow" size={18}/></Link>
+       <Link href="/cart#cart-checkout" className="hcs-cart-checkout" onClick={()=>setOpen(false)}>Review seller deals &amp; checkout <Icon name="arrow" size={18}/></Link>
        <button type="button" className="hcs-cart-secondary" onClick={closeCart}>Keep browsing / Minimize</button>
       </div>
      </>}
