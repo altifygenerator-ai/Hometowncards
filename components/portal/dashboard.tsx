@@ -1,5 +1,5 @@
-import {SellerApplicationsPanel} from '@/components/portal/seller-applications-panel';
 'use client';
+import {SellerApplicationsPanel} from '@/components/portal/seller-applications-panel';
 import {useEffect,useState,useCallback,useRef} from 'react';
 import Link from 'next/link';
 import {formatMoney} from '@/lib/catalog';
