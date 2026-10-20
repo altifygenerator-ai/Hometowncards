@@ -1,0 +1,37 @@
+name: Marketplace public launch smoke test
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/marketplace-smoke.yml"
+  workflow_dispatch:
+jobs:
+  live-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for production and check public pages
+        run: |
+          set -euo pipefail
+          for path in / /sell /giveaway /sellers /shop /cart; do
+            echo "Checking $path"
+            status=""
+            for attempt in $(seq 1 8); do
+              status=$(curl --compressed -L -s -o /tmp/marketplace-check.html -w '%{http_code}' --max-time 25 "https://www.hometowncardshop.com$path" || true)
+              if [ "$status" = "200" ]; then break; fi
+              sleep 5
+            done
+            test "$status" = "200" || { echo "Unexpected status $status for $path"; exit 1; }
+            echo "PASS $path HTTP $status"
+          done
+      - name: Public requests fail safely
+        run: |
+          set -euo pipefail
+          giveaway=$(curl -s -o /tmp/giveaway.json -w '%{http_code}' --max-time 25 -X POST -H 'Content-Type: application/json' -d '{}' https://www.hometowncardshop.com/api/giveaway/enter)
+          register=$(curl -s -o /tmp/register.json -w '%{http_code}' --max-time 25 -X POST -H 'Content-Type: application/json' -d '{}' https://www.hometowncardshop.com/api/seller/register)
+          dealer=$(curl -s -o /tmp/dealer.json -w '%{http_code}' --max-time 25 -X POST -H 'Content-Type: application/json' -d '{}' https://www.hometowncardshop.com/api/dealer/checkout)
+          echo "Giveaway invalid entry -> $giveaway"
+          echo "Seller invalid registration -> $register"
+          echo "Dealer payment disabled -> $dealer"
+          test "$giveaway" = "400"
+          test "$register" = "400"
+          test "$dealer" = "503"
