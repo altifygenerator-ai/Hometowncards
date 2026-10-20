@@ -28,6 +28,7 @@ export function PortalLogin(){
      body:JSON.stringify({email,password,turnstileToken:token})});
    const data=await r.json();
    if(!r.ok)throw new Error(data.error||'Sign-in failed.');
+   if(data.pending){setError('Your seller application is waiting for review. Once approved, sign in here to set up your shop.');return;}
    window.location.assign('/admin/dashboard');
   }catch(e){
    setError(e instanceof Error?e.message:'Sign in could not be completed.');
