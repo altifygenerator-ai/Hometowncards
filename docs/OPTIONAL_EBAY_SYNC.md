@@ -2,7 +2,38 @@
 
 ## What works after production OAuth setup
 
-### Only import trading cards
+### Trading cards plus sports license plates — strict storefront gate
+
+**The Hometown Card Shop eBay-linked storefront is now limited to trading cards
+and sports-team decorative license plates.** Books, software, electronics, board
+games, ordinary automotive plates and all other merchandise remain on eBay but
+are hidden from this website. Manual and CSV listings are unaffected.
+
+eBay's `GetMyeBaySelling` response often omits `PrimaryCategory.CategoryID`,
+so filtering only by the category ID did not work. The new server-side
+`hcs_ebay_storefront_kind` classifies using a verified eBay card category ID
+**or** conservative card-title patterns such as card year, recognizable trading-card
+brand and card number. Sports-themed license plates are recognized separately and
+sorted as **Memorabilia / Sports License Plates**. Anything uncertain remains
+hidden for review rather than exposed as a card.
+
+Existing eBay-linked rows were reclassified in Supabase, without deleting
+their historical records or updating the actual eBay listings. The
+`getCatalog` query separately enforces a hard product-kind allowlist, ensuring
+old/stale classified products cannot reappear on the public website.
+
+For card organization, the importer reads eBay ItemSpecifics when available
+and otherwise parses clear title details for year, set, card number and player.
+Existing manual edits in `listing_overrides` are respected. Team information
+is only populated if supported by a team value in eBay data or the listing title;
+the system does not invent missing teams. New cards without enough evidence are
+hidden for review.
+
+The eBay feed sometimes omits `QuantityAvailable`. The importer now correctly
+falls back to the listed quantity minus units sold rather than treating a missing
+number as zero and falsely marking cards sold out.
+
+### Previous card-only filter (superseded)
 
 The eBay importer now uses eBay's own primary **CategoryID**, not guesses from an item title.
 It imports physical sports trading card singles, card lots, sets and sealed packs; non-sport
