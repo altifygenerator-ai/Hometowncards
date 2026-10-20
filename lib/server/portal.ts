@@ -33,7 +33,7 @@ export async function portalContext(sellerId?:string):Promise<PortalContext>{
  const platformRole=admins[0]?.role||null;
  const expectedOwner=(process.env.SHOP_ADMIN_EMAIL||'altifygenerator@gmail.com').trim().toLowerCase();
  if(platformRole==='owner'&&user.email.trim().toLowerCase()!==expectedOwner)throw new PortalError('This account is not authorized as the platform owner.',403);
- let allowed=members.filter(m=>m.sellers?.status==='approved');
+ let allowed=members.filter(m=>(m.sellers?.status==='approved'||m.sellers?.status==='pending'));
  if(platformRole==='owner'||platformRole==='admin'){
    const known=await db<Array<{id:string;slug:string;display_name:string;status:string}>>('sellers?select=id,slug,display_name,status&status=eq.approved&order=created_at.asc&limit=100');
    for(const s of known)if(!allowed.some(m=>m.seller_id===s.id))allowed.push({seller_id:s.id,role:'owner',sellers:s});
