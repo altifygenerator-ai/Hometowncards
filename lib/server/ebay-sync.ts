@@ -20,7 +20,8 @@ function mapListing(x:PageItem):Listing|null{
  // A missing title is not safe to import or hide automatically.
  if(title.length<2)return null;
  const price=Math.round(Number(xmlText((x.SellingStatus as Record<string,unknown>)?.CurrentPrice||x.StartPrice))*100);
- const quantityAvailable=Number(xmlText(x.QuantityAvailable));
+ const availableText=xmlText(x.QuantityAvailable);
+ const quantityAvailable=availableText===''?Number.NaN:Number(availableText);
  const quantity=Number.isFinite(quantityAvailable)&&quantityAvailable>=0
   ?quantityAvailable
   :Number(xmlText(x.Quantity)||0)-Number(xmlText((x.SellingStatus as Record<string,unknown>)?.QuantitySold)||0);
@@ -132,7 +133,8 @@ async function checkListing(access:string,id:string){
  const item=root.Item as Record<string,unknown>|undefined;
  const sold=Number(xmlText((item?.SellingStatus as Record<string,unknown>|undefined)?.QuantitySold)||0);
  const qty=Number(xmlText(item?.Quantity)||0);
- const available=Number(xmlText(item?.QuantityAvailable));
+ const availableText=xmlText(item?.QuantityAvailable);
+ const available=availableText===''?Number.NaN:Number(availableText);
  const remaining=Number.isFinite(available)&&available>=0?available:Math.max(0,qty-sold);
  const status=xmlText((item?.SellingStatus as Record<string,unknown>|undefined)?.ListingStatus);
  if(!Number.isFinite(remaining)||remaining<0||remaining>100000)return {remaining:-1,status};
