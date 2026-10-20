@@ -44,11 +44,11 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
    hidden+=result.listings.excluded;ignored+=result.listings.ignored;unclassified+=result.listings.unknown;
    orderSales+=result.orders.applied;flagged+=result.orders.conflicts+result.listings.review;
    writebacks+=result.writeback.completed;
-   setNotice('Synced '+created+' card listings; hid '+hidden+' non-card items; '+(result.listings.page?
+   setNotice('Checked '+created+' cards and sports plates; hid '+hidden+' unrelated items; '+(result.listings.page?
     'continuing on page '+result.listings.page+' of '+result.listings.totalPages:'listing pass complete')+'…');
   }
   setNotice('eBay sync '+(done?'completed.':'paused after 50 batches.')+
-    ' Card listings updated: '+created+'. Non-card site items hidden: '+hidden+
+    ' Cards and sports plates updated: '+created+'. Unrelated site items hidden: '+hidden+
     '. Non-card listings skipped: '+ignored+'. Unclassified: '+unclassified+'. eBay sales imported: '+orderSales+
     '. Website sales written back: '+writebacks+'. Needs review: '+flagged+'.');
   await reload();
@@ -71,8 +71,8 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
  })}
  const when=(s:string|null|undefined)=>s?new Date(s).toLocaleString():'Not yet';
  return <section className="portal-panel">
-  <h2>eBay trading-card inventory synchronization</h2>
-  <p>Connect eBay to sync <strong>trading cards only</strong>. Books, video games, electronics, guitars, and other unrelated eBay items are skipped. Running Sync again also hides unrelated listings imported earlier, without deleting anything on eBay.
+  <h2>eBay cards &amp; sports memorabilia sync</h2>
+  <p>Connect eBay to sync <strong>trading cards and sports license plates</strong>. Books, video games, electronics, guitars, and unrelated eBay items are hidden from this shop. Running Sync again also hides unrelated listings imported earlier, without deleting anything on eBay.
    <strong> eBay is entirely optional.</strong> You can still add cards directly or import CSV files without an eBay account.</p>
   {!data?<p>Checking eBay status…</p>:
    !data.configured?<p>eBay Production API settings must be added to Vercel before you can connect an account.
@@ -88,7 +88,7 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
     <p><strong>Sync mode:</strong> {data.account?.mode==='two_way'?'Two-way sale coordination':'Import-only (safe first step)'}</p>
     {data.account?.lastError&&<p className="portal-error">Last eBay issue: {data.account.lastError}</p>}
     <div className="portal-actions">
-     <button className="button button-primary" disabled={busy} onClick={synchronize}>{busy?'Syncing…':'Sync cards & hide non-card imports'}</button>
+     <button className="button button-primary" disabled={busy} onClick={synchronize}>{busy?'Syncing…':'Sync cards &amp; sports plates'}</button>
      <button className="button button-outline" disabled={busy} onClick={switchMode}>
       {data.account?.mode==='two_way'?'Pause website → eBay updates':'Enable two-way sales updates'}</button>
      <button className="button button-outline" disabled={busy} onClick={reset}>Restart listing import</button>
