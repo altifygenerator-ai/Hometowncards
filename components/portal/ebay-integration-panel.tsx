@@ -44,7 +44,7 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
    hidden+=result.listings.excluded;ignored+=result.listings.ignored;unclassified+=result.listings.unknown;
    orderSales+=result.orders.applied;flagged+=result.orders.conflicts+result.listings.review;
    writebacks+=result.writeback.completed;
-   setNotice('Synced '+created+' card listings; hid '+hidden+' non-card items; '+(result.listings.page?
+   setNotice('Checked '+created+' cards and sports plates; hid '+hidden+' unrelated items; '+(result.listings.page?
     'continuing on page '+result.listings.page+' of '+result.listings.totalPages:'listing pass complete')+'…');
   }
   setNotice('eBay sync '+(done?'completed.':'paused after 50 batches.')+
@@ -88,7 +88,7 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
     <p><strong>Sync mode:</strong> {data.account?.mode==='two_way'?'Two-way sale coordination':'Import-only (safe first step)'}</p>
     {data.account?.lastError&&<p className="portal-error">Last eBay issue: {data.account.lastError}</p>}
     <div className="portal-actions">
-     <button className="button button-primary" disabled={busy} onClick={synchronize}>{busy?'Syncing…':'Sync cards & hide non-card imports'}</button>
+     <button className="button button-primary" disabled={busy} onClick={synchronize}>{busy?'Syncing…':'Sync cards &amp; sports plates'}</button>
      <button className="button button-outline" disabled={busy} onClick={switchMode}>
       {data.account?.mode==='two_way'?'Pause website → eBay updates':'Enable two-way sales updates'}</button>
      <button className="button button-outline" disabled={busy} onClick={reset}>Restart listing import</button>
