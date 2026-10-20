@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {failure,PortalError,isConfigured,portalContext,json} from '@/lib/server/portal';
+import {failure,PortalError,isConfigured,portalContext,json,db} from '@/lib/server/portal';
 import {verifyTurnstile} from '@/lib/server/turnstile';
 export async function POST(req:NextRequest){
  try{
@@ -13,8 +13,13 @@ export async function POST(req:NextRequest){
   if(!anon)throw new PortalError('Shop sign-in is not configured yet.',503);
   const auth=await fetch(`${base}/auth/v1/token?grant_type=password`,{method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},body:JSON.stringify({email:body.email,password:body.password}),cache:'no-store'});
   if(!auth.ok){return json({error:'Could not sign in. Check your email and password.'},401)}
-  const data=await auth.json() as {access_token:string;refresh_token:string;expires_in:number};
-  const response=json({ok:true});
+  const data=await auth.json() as {access_token:string;refresh_token:string;expires_in:number;user?:{id:string}};
+  let pending=false;
+  if(data.user?.id){
+   const memberships=await db<Array<{seller_id:string}>>('seller_members?select=seller_id&user_id=eq.'+encodeURIComponent(data.user.id)+'&limit=1');
+   if(!memberships.length){const applications=await db<Array<{status:string}>>('seller_applications?select=status&user_id=eq.'+encodeURIComponent(data.user.id)+'&limit=1');pending=applications.some(a=>['received','review'].includes(a.status));}
+  }
+  const response=json({ok:true,pending});
   const secure=process.env.NODE_ENV==='production';
   response.cookies.set('hcs_portal_access',data.access_token,{httpOnly:true,sameSite:'lax',secure,path:'/',maxAge:Math.min(data.expires_in,3600)});
   response.cookies.set('hcs_portal_refresh',data.refresh_token,{httpOnly:true,sameSite:'strict',secure,path:'/api/portal/session',maxAge:60*60*24*14});
