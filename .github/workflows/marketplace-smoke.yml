@@ -35,3 +35,6 @@ jobs:
           test "$giveaway" = "400"
           test "$register" = "400"
           test "$dealer" = "503"
+          connect=$(curl -s -o /tmp/connect.json -w '%{http_code}' --max-time 25 -X POST -H 'Content-Type: application/json' -d '{}' https://hometowncardshop.vercel.app/api/stripe/connect/webhook)
+          echo "Connect unsigned event -> $connect"
+          test "$connect" = "400"
