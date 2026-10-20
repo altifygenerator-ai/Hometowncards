@@ -32,7 +32,7 @@ export function GiveawayPanel(){
   }catch(e){setError(e instanceof Error?e.message:'Draw failed')}finally{setBusy(false)}
  }
  if(!data)return <section className="portal-panel"><h2>Stan Musial Giveaway</h2><p>{error||'Loading giveaway...'}</p></section>;
- const g=data.giveaway;const local=(s:string|null)=>s?new Date(s).toISOString().slice(0,16):'';
+ const g=data.giveaway;const local=(s:string|null)=>{if(!s)return '';const d=new Date(s);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)};
  return <div className="portal-panels"><section className="portal-panel"><h2>Stan Musial Giveaway</h2><p><strong>{data.confirmedCount}</strong> confirmed entries · {data.entryCount} submitted · {g.entries_open?'Entries enabled':'Entries closed'}.</p>
  <p>Before opening, add the real card photo, accurate prize value and description, sponsor mailing/contact information, and finalized official sweepstakes rules. No purchases or follows give additional chances.</p>
  {notice&&<p role="status" className="portal-alert">{notice}</p>}{error&&<p role="alert" className="portal-alert portal-alert-error">{error}</p>}
