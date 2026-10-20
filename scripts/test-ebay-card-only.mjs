@@ -10,6 +10,7 @@ const guards=read('supabase/ebay-card-only-order-guard.sql');
 const metadata=read('lib/ebay-product-metadata.ts');
 const tests=[
  ['eBay category missing does not discard item titles',!sync.includes("if(disposition!=='card')return {id,categoryId}")],
+ ['missing quantityAvailable never coerced to zero',sync.includes("availableText===''?Number.NaN:Number(availableText)")&&sync.includes("quantityAvailable=availableText===''?Number.NaN")],
  ['parse eBay primary category whenever returned',sync.includes("categoryNode?.CategoryID")],
  ['send full listing details to SQL classifier',sync.includes("hcs_reconcile_ebay_cards_page")],
  ['strict title + category classifier',db.includes('hcs_ebay_storefront_kind(p_cat text,p_title text)')],
