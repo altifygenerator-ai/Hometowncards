@@ -19,13 +19,14 @@ export async function assertExpectedStripeAccount(){
   throw new PortalError('This Stripe account is not ready to accept payments.',503);
 }
 
-export async function stripePost<T=StripeCheckoutSession>(path:string,fields:URLSearchParams,idempotencyKey?:string):Promise<T>{
+export async function stripePost<T=StripeCheckoutSession>(path:string,fields:URLSearchParams,idempotencyKey?:string,connectedAccountId?:string):Promise<T>{
  const secret=process.env.STRIPE_SECRET_KEY;
  if(!secret)throw new PortalError('Payments are not configured yet.',503);
  const res=await fetch('https://api.stripe.com/v1/'+path,{method:'POST',headers:{
   Authorization:'Bearer '+secret,
   'Content-Type':'application/x-www-form-urlencoded',
-  ...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{})
+  ...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{}),
+  ...(connectedAccountId?{'Stripe-Account':connectedAccountId}:{})
  },body:fields.toString(),cache:'no-store'});
  const data=await res.json();
  if(!res.ok){
