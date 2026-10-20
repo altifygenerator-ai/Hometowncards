@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState,useCallback,useRef} from 'react';
-type Data={giveaway:{id:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};entryCount:number;confirmedCount:number};
+type Data={giveaway:{id:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};entryCount:number;confirmedCount:number;winner:{id:string;name:string;email:string}|null};
 export function GiveawayPanel(){
  const photoRef=useRef<HTMLInputElement|null>(null),[photoUrl,setPhotoUrl]=useState('');
  const [data,setData]=useState<Data|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
@@ -51,6 +51,6 @@ export function GiveawayPanel(){
  </form></section>
  <section className="portal-panel"><h2>Giveaway controls</h2><p>Public entry page: <a href="/giveaway" target="_blank" rel="noreferrer">View giveaway ↗</a></p>
  <p>The winner is selected from one verified entry per submitted email. Duplicate email entries are blocked; no purchase-based entries.</p>
- {g.drawn_at?<p>Winner drawn {new Date(g.drawn_at).toLocaleString()}.</p>:<button type="button" onClick={draw} disabled={busy||!g.ends_at||Date.now()<Date.parse(g.ends_at)} className="button button-outline">Draw winner after entries close</button>}
+ {g.drawn_at?<p>Winner drawn {new Date(g.drawn_at).toLocaleString()}. Contact: <strong>{data.winner?.name||'Recorded winner'}</strong> · <a href={'mailto:'+data.winner?.email}>{data.winner?.email}</a>. Confirm eligibility before sending the card.</p>:<button type="button" onClick={draw} disabled={busy||!g.ends_at||Date.now()<Date.parse(g.ends_at)} className="button button-outline">Draw winner after entries close</button>}
  </section></div>
 }
