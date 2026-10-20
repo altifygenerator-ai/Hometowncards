@@ -1,10 +1,11 @@
 'use client';
-import {useEffect,useState,useCallback} from 'react';
+import {useEffect,useState,useCallback,useRef} from 'react';
 type Data={giveaway:{id:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};entryCount:number;confirmedCount:number};
 export function GiveawayPanel(){
+ const photoRef=useRef<HTMLInputElement|null>(null),[photoUrl,setPhotoUrl]=useState('');
  const [data,setData]=useState<Data|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const load=useCallback(async()=>{const r=await fetch('/api/portal/giveaway',{cache:'no-store'}),x=await r.json();
-  if(!r.ok)throw Error(x.error||'Unable to load giveaway');setData(x)},[]);
+  if(!r.ok)throw Error(x.error||'Unable to load giveaway');setData(x);setPhotoUrl(x.giveaway.prize_image_url||'')},[]);
  useEffect(()=>{load().catch(e=>setError(e.message))},[load]);
  async function submit(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();if(!data)return;setBusy(true);setError('');setNotice('');
@@ -19,6 +20,12 @@ export function GiveawayPanel(){
   if(!r.ok)throw Error(x.error||'Could not save giveaway');setNotice('Giveaway settings saved.');await load();
   }catch(e){setError(e instanceof Error?e.message:'Save failed')}finally{setBusy(false)}
  }
+ async function uploadPhoto(){const file=photoRef.current?.files?.[0];if(!file){setError('Choose a real photograph of the signed card first.');return}
+  setBusy(true);setError('');try{const form=new FormData();form.set('file',file);
+  const r=await fetch('/api/portal/giveaway/photo',{method:'POST',body:form}),x=await r.json();
+  if(!r.ok||!x.url)throw Error(x.error||'Could not upload photo');setPhotoUrl(x.url);setNotice('Photo uploaded. Save giveaway settings to use it.');
+  }catch(e){setError(e instanceof Error?e.message:'Upload failed')}finally{setBusy(false)}
+ }
  async function draw(){if(!confirm('Draw a winner from confirmed eligible entries? This cannot be reversed.'))return;
   setBusy(true);setError('');try{const r=await fetch('/api/portal/giveaway',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'draw'})});
   const x=await r.json();if(!r.ok)throw Error(x.error||'Draw unavailable');setNotice('Winner drawn. Check the operator alert email and verified result.');await load();
@@ -32,7 +39,8 @@ export function GiveawayPanel(){
  <form className="portal-login-form" onSubmit={submit}>
  <label>Prize title<input name="prizeTitle" required minLength={10} maxLength={180} defaultValue={g.prize_title}/></label>
  <label>Exact card, autograph details and authentication status<textarea name="prizeDescription" required minLength={20} maxLength={1000} defaultValue={g.prize_description} rows={4}/></label>
- <label>Prize photo HTTPS URL<input name="prizeImageUrl" type="url" defaultValue={g.prize_image_url||''}/></label>
+ <label>Prize photo HTTPS URL<input name="prizeImageUrl" type="url" value={photoUrl} onChange={e=>setPhotoUrl(e.target.value)}/></label>
+ <label>Upload actual signed card photograph (JPG, PNG, WebP)<input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp"/></label><button type="button" disabled={busy} className="button button-outline" onClick={uploadPhoto}>Upload photograph</button>{photoUrl&&<img src={photoUrl} alt="Current giveaway card photo" style={{maxWidth:240,width:"100%",height:"auto"}}/>}
  <label>Approximate retail value ($)<input name="arv" type="number" step="0.01" min="0.01" required defaultValue={g.approximate_retail_value_cents===null?'':String(g.approximate_retail_value_cents/100)}/></label>
  <label>Organizer contact, including address<input name="organizerContact" maxLength={500} defaultValue={g.organizer_contact}/></label>
  <label>Opens (local time)<input name="startsAt" type="datetime-local" defaultValue={local(g.starts_at)}/></label>
