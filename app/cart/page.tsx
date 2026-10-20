@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import {CartCheckout} from '@/components/cart-checkout';
+import {DealerCheckout} from '@/components/dealer-checkout';
 import {useMemo,useState} from 'react';
 import {useCart} from '@/components/cart-provider';
 import {Icon} from '@/components/icons';
@@ -8,7 +9,7 @@ import {bonusCount,nextReward} from '@/lib/rewards';
 import type {CartLine} from '@/components/cart-provider';
 
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n/100);
-const founder=(line:CartLine)=>line.sellerName==='Hometown Card Shop';
+const founder=(line:CartLine)=>line.sellerSlug==='hometown-card-shop';
 // Cart values are display-only. The checkout RPC independently validates seller ownership,
 // stock, prices, and bonus rewards; never use client cart totals as payment authority.
 export default function CartPage(){
@@ -21,7 +22,7 @@ export default function CartPage(){
    if(!groups.has(key))groups.set(key,{sellerId:key,sellerName:line.sellerName,lines:[]});
    groups.get(key)!.lines.push(line);
   }
-  return [...groups.values()].sort((a,b)=>Number(b.sellerName==='Hometown Card Shop')-Number(a.sellerName==='Hometown Card Shop'));
+  return [...groups.values()].sort((a,b)=>Number(b.lines[0]?.sellerSlug==='hometown-card-shop')-Number(a.lines[0]?.sellerSlug==='hometown-card-shop'));
  },[lines]);
  const renderLines=(items:CartLine[])=>items.map(line=><article className="cart-line" key={line.key}>
   <Link href={'/cards/'+line.id} className="cart-line-image">{line.image?<img src={line.image} alt={line.title}/>:<div className="missing-art"><span>PHOTO<br/>PENDING</span></div>}</Link>
@@ -48,8 +49,7 @@ export default function CartPage(){
     <CartCheckout lines={deal.lines} bonusSport={sport}/>
     <div className="summary-fine">Only Hometown Card Shop merchandise earns our free bonus cards. Rewards never stack. Shipping and tax don't count toward the reward thresholds.</div></>:
     <><p className="summary-fine">This dealer's shipping and policies are separate from Hometown Card Shop. Cards from this shop do not qualify for Hometown's free-card rewards.</p>
-    <div className="portal-alert portal-alert-error" role="status">Dealer checkout is opening soon. Your cards will stay in this deal until seller payments are enabled.</div>
-    <Link href="/shop" className="button button-outline">Keep browsing cards</Link></>}
+    <DealerCheckout sellerId={deal.sellerId} lines={deal.lines}/></>}
    </aside>
   </section>
  })}
