@@ -8,8 +8,8 @@ export async function GET(req:NextRequest){
  try{await platform(req);
   const arr=await db<Config[]>('shop_giveaways?select=*&slug=eq.'+slug+'&limit=1');
   const g=arr[0];if(!g)throw new PortalError('Giveaway not configured.',503);
-  const all=await db<Array<{confirmed_at:string|null}>>('shop_giveaway_entries?select=confirmed_at&giveaway_id=eq.'+g.id+'&limit=50000');
-  return json({giveaway:g,entryCount:all.length,confirmedCount:all.filter(x=>x.confirmed_at).length});
+  const stats=await db<{entryCount:number;confirmedCount:number;winner:{id:string;email:string;name:string}|null}>('rpc/hcs_giveaway_admin_stats',{method:'POST',body:JSON.stringify({p_slug:slug})});
+  return json({giveaway:g,...stats});
  }catch(e){return failure(e)}
 }
 export async function POST(req:NextRequest){
@@ -44,7 +44,7 @@ export async function POST(req:NextRequest){
   }
   if(entries.length&&(title!==g.prize_title||description!==g.prize_description||value!==g.approximate_retail_value_cents||
    image!==(g.prize_image_url||'')||rules!==g.rules_text||contact!==g.organizer_contact||
-   starts?.toISOString()!==(g.starts_at||undefined)||ends?.toISOString()!==(g.ends_at||undefined)))
+   starts?.getTime()!==(g.starts_at?Date.parse(g.starts_at):undefined)||ends?.getTime()!==(g.ends_at?Date.parse(g.ends_at):undefined)))
     throw new PortalError('Prize and rules cannot be changed after entries have begun. Close entries or contact support.',409);
   if(g.drawn_at&&wantsOpen)throw new PortalError('This giveaway has already been drawn.',409);
   await db('shop_giveaways?id=eq.'+g.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({
