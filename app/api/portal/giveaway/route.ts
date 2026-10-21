@@ -30,15 +30,15 @@ export async function POST(req:NextRequest){
   const title=safeTerm(b.prizeTitle,180),description=safeTerm(b.prizeDescription,1000),contact=safeTerm(b.organizerContact,500);
   const rules=safeTerm(b.rules,12000);
   const image=safeTerm(b.prizeImageUrl,1400);
-  const value=Number(b.arvCents);
+  const value=b.arvCents===null?null:Number(b.arvCents);
   const starts=typeof b.startsAt==='string'&&b.startsAt?new Date(b.startsAt):null;
   const ends=typeof b.endsAt==='string'&&b.endsAt?new Date(b.endsAt):null;
   const wantsOpen=b.entriesOpen===true;
-  if(title.length<10||description.length<20||!Number.isInteger(value)||value<1||value>100000000)
+  if(title.length<10||description.length<20||(value!==null&&(!Number.isInteger(value)||value<1||value>100000000)))
    throw new PortalError('Provide an accurate prize name, description, and approximate retail value.',400);
   if(image&&!/^https:\/\/[^\s]+$/i.test(image))throw new PortalError('Giveaway picture must be an HTTPS image URL.',400);
   if(wantsOpen){
-   if(!image||rules.length<300||contact.length<15||!starts||!ends||!Number.isFinite(starts.getTime())||!Number.isFinite(ends.getTime())||ends<=starts||ends<=new Date())
+   if(!image||value===null||rules.length<300||contact.length<15||!starts||!ends||!Number.isFinite(starts.getTime())||!Number.isFinite(ends.getTime())||ends<=starts||ends<=new Date())
     throw new PortalError('Add the prize photo, complete official rules and organizer contact, and valid opening/closing dates before starting entries.',400);
    if(!process.env.RESEND_API_KEY||!process.env.RESEND_FROM_EMAIL)throw new PortalError('Giveaway email confirmation is not configured.',503);
   }
