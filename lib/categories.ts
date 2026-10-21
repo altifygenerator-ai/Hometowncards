@@ -41,12 +41,12 @@ export function canonicalSport(raw:string):string{
 
 /** Only infer a sport when the exact set and year identify it reliably. */
 export function catalogSport(product:Pick<Product,'sport'|'set'|'year'|'category'>):string{
- const sport=catalogSport(product);
+ const sport=canonicalSport(product.sport);
  if(sport==='Other Cards'&&product.category.trim().toLowerCase()==='trading cards'&&product.set.trim().toLowerCase()==='fleer ultra'&&product.year.trim()==='1993')return 'Baseball';
  return sport;
 }
 export function shelvesWithCounts(products:Product[]){
   const tally = new Map<string,number>();
-  for(const product of products){const sport=canonicalSport(product.sport);tally.set(sport,(tally.get(sport)||0)+1)}
+  for(const product of products){const sport=catalogSport(product);tally.set(sport,(tally.get(sport)||0)+1)}
   return SHELVES.map(s=>({...s,count:tally.get(s.sport||'')||0}));
 }
