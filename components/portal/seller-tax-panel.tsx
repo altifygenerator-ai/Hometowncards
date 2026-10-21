@@ -29,12 +29,12 @@ export function SellerTaxPanel({sellerId,isFounder}:{sellerId:string;isFounder:b
  return <section className="portal-panel">
   <h2>Tax responsibility &amp; Stripe Connect</h2>
   <p>{isFounder?'Your shop calculates Arkansas tax from official Arkansas jurisdiction files. Payments go to Hometown Card Shop’s own Stripe account.':
-   'Your seller account uses Stripe Connect for its payments when approved. Seller tax calculations are separate from Stripe payouts.'}</p>
+   'Your seller account uses Stripe Connect for its payments when approved. Before publishing a shop, configure Stripe Tax on your connected account, confirm registrations, and keep your tax settings current. A connected payout account alone does not make you tax-ready.'}</p>
   {!data?<p>Loading seller tax settings…</p>:<>
    <p><b>Stripe Connect:</b> {data.connect.connected?data.connect.status:'Not connected'} · Charges {data.connect.chargesEnabled?'enabled':'not enabled'} · Payouts {data.connect.payoutsEnabled?'enabled':'not enabled'}</p>
    {!isFounder&&<label>Seller tax calculation mode<select value={mode} onChange={e=>setMode(e.target.value as Profile['collection_mode'])}>
-    <option value="seller_managed">Seller-managed tax reporting</option>
-    <option value="connect_stripe_tax" disabled={!data.connect.chargesEnabled}>Stripe Tax on seller’s connected account (requires its own registration)</option>
+    <option value="seller_managed">Seller-managed tax (storefront stays pending)</option>
+    <option value="connect_stripe_tax" disabled={!data.connect.chargesEnabled}>Connected Stripe Tax (required before checkout)</option>
    </select></label>}
    <label>States where the business is already registered to collect sales tax (comma-separated, e.g. AR, TX)
     <input value={states} onChange={e=>setStates(e.target.value)} placeholder="Leave blank until actually registered"/>
@@ -42,7 +42,7 @@ export function SellerTaxPanel({sellerId,isFounder}:{sellerId:string;isFounder:b
    <label>Seller tax notes<textarea rows={3} value={notes} onChange={e=>setNotes(e.target.value.slice(0,700))}/></label>
    <label className="hcs-seller-tax-ack"><input type="checkbox" checked={ack} onChange={e=>setAck(e.target.checked)}/>
     <span>I understand I must confirm tax registrations and filing responsibilities before sales tax is collected.</span></label>
-   <p><small>Stripe Connect does not register sellers for sales tax, decide who is the marketplace facilitator, or file returns automatically. Connected seller checkout remains off until payment routing, tax, refunds and settlement tests are completed.</small></p>
+   <p><small>Stripe Connect does not register sellers for sales tax, decide who is the marketplace facilitator, or file returns automatically. Stripe Tax setup and any marketplace-facilitator responsibilities must be reviewed before accepting orders. Seller-managed tax mode is for preparing inventory, not live selling.</small></p>
    {error&&<p className="portal-error" role="alert">{error}</p>}
    {notice&&<p role="status">{notice}</p>}
    <button className="button button-primary" disabled={busy} onClick={save}>{busy?'Saving…':'Save seller tax preferences'}</button>
