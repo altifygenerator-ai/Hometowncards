@@ -33,6 +33,8 @@ jobs:
         run: node scripts/test-musial-giveaway-cron.mjs
       - name: Verify giveaway confirmation email resend safety
         run: node scripts/test-giveaway-confirmation-resend.mjs
+      - name: Verify eBay category reviews are not stock conflicts
+        run: node scripts/test-ebay-review-metrics.mjs
       - name: Next.js build
         run: npm run build
         env:
