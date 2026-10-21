@@ -306,3 +306,43 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .hcs-tax-preview>.hcs-tax-total strong{font-size:22px}
 .hcs-tax-preview small{font-size:10px;color:#658097;line-height:1.55;display:block;margin-top:8px}
 @media(max-width:355px){.hcs-checkout-address-grid{grid-template-columns:1fr}.hcs-checkout-address-grid label{grid-column:1/-1}}
+
+
+/* Dynamic collector shelves: featured stock spans multiple sellers, with inactive TCG types
+   visibly available as future categories instead of claiming inventory exists. */
+.shelf-coming-soon{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;flex-wrap:wrap;margin-top:23px;padding:21px 23px;border:1px solid #ddcfb9;background:#fffbf4}
+.shelf-coming-soon>div:first-child{display:flex;flex-direction:column;gap:5px;min-width:205px}
+.shelf-coming-soon strong{font-family:Georgia,serif;font-size:19px;color:#19354f}
+.shelf-coming-soon>div:first-child>span{color:#756c5d;font-size:12px}
+.shelf-coming-soon-items{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+.shelf-coming-soon-chip{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border:1px dashed #c7b799;background:#f7efe2;color:#5a5145;font-weight:800;font-size:12px}
+.shelf-coming-soon-chip small{color:#81796c;font-weight:600;font-size:10px}
+/* Main nav: preserve every link without allowing desktop overflow/cropping. */
+.nav{height:auto;min-height:47px}
+.nav .nav-inner{height:auto;min-height:47px;gap:clamp(9px,1.1vw,20px);justify-content:center;flex-wrap:wrap;padding-top:7px;padding-bottom:7px}
+.nav .nav-space{flex:1 1 14px}
+.nav .nav-dropdown{position:relative;flex:0 0 auto}
+.nav .nav-dropdown summary{list-style:none;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;color:#303e4e;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.035em}
+.nav .nav-dropdown summary::-webkit-details-marker{display:none}
+.nav .nav-dropdown summary:hover,.nav .nav-dropdown[open] summary{color:#205f94}
+.nav .nav-dropdown-list{position:absolute;top:calc(100% + 13px);left:0;min-width:230px;display:flex;flex-direction:column;gap:0;padding:8px;background:#fffaf1;border:1px solid #d9cab4;box-shadow:0 9px 20px #102b422b;z-index:80}
+.nav .nav-dropdown:last-child .nav-dropdown-list{left:auto;right:0}
+.nav .nav-dropdown-list a{display:block;white-space:normal;font-size:12px;padding:10px 11px;line-height:1.4}
+.nav .nav-dropdown-list a:hover{background:#f0e6d5}
+@media(max-width:1350px){
+ .mobile-toggle{display:grid;place-items:center}
+ .nav{display:none}
+ .nav.nav-open{display:block}
+ .nav .nav-inner{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:13px 0;flex-wrap:nowrap}
+ .nav .nav-inner>a{display:block;padding:11px 12px;font-size:13px}
+ .nav .nav-space{display:none}
+ .nav .nav-dropdown{width:100%}
+ .nav .nav-dropdown summary{padding:11px 12px;font-size:13px}
+ .nav .nav-dropdown-list,.nav .nav-dropdown:last-child .nav-dropdown-list{position:static;min-width:0;width:100%;box-shadow:none;border:0;border-left:2px solid #d9cab4;padding:0 0 0 13px;background:transparent}
+ .nav .nav-dropdown-list a{font-size:13px;padding:10px 12px}
+}
+@media(max-width:760px){
+ .shelf-coming-soon{padding:16px}
+ .shelf-coming-soon-items{gap:7px}
+ .shelf-coming-soon-chip{font-size:11px}
+}

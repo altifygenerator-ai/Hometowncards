@@ -23,8 +23,23 @@ export const SHELVES:Shelf[] = [
  {slug:'sports-memorabilia',name:'Sports memorabilia',emoji:'🏟️',description:'NFL and other sports license plates and fan collectibles',sport:'Memorabilia',group:'Other cards & collectibles'},
  {slug:'collectibles',name:'Vintage & other finds',emoji:'★',description:'Books, memorabilia, games and oddities',sport:'Collectibles',group:'Other cards & collectibles'},
  ];
+export function canonicalSport(raw:string):string{
+ const value=raw.trim();
+ if(!value)return 'Other Cards';
+ const normalized=value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+ const aliases:Record<string,string>={
+  pokemon:'Pokémon',pokemontcg:'Pokémon',
+  mtg:'Magic',magic:'Magic',magicthegathering:'Magic',
+  yugioh:'Yu-Gi-Oh!',yugiohtcg:'Yu-Gi-Oh!',
+  onepiece:'One Piece',onepiecetcg:'One Piece',
+  nonsport:'Non-Sport',nonsportcards:'Non-Sport',
+  othertcgs:'Other Cards',othercards:'Other Cards',othertradingcards:'Other Cards',
+  motorsports:'Racing',nascar:'Racing',memorabilia:'Memorabilia'
+ };
+ return aliases[normalized]||SHELVES.find(s=>s.sport?.toLowerCase()===value.toLowerCase())?.sport||value;
+}
 export function shelvesWithCounts(products:Product[]){
   const tally = new Map<string,number>();
-  for(const product of products)tally.set(product.sport,(tally.get(product.sport)||0)+1);
+  for(const product of products){const sport=canonicalSport(product.sport);tally.set(sport,(tally.get(sport)||0)+1)}
   return SHELVES.map(s=>({...s,count:tally.get(s.sport||'')||0}));
 }
