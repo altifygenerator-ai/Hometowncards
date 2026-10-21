@@ -12,7 +12,7 @@ jobs:
       - name: Wait for production and check public pages
         run: |
           set -euo pipefail
-          for path in / /sell /giveaway /sellers /shop /cart; do
+          for path in / /sell /seller-terms /giveaway /sellers /shop /cart /checkout/success; do
             echo "Checking $path"
             status=""
             for attempt in $(seq 1 8); do
@@ -38,3 +38,12 @@ jobs:
           connect=$(curl -s -o /tmp/connect.json -w '%{http_code}' --max-time 25 -X POST -H 'Content-Type: application/json' -d '{}' https://hometowncardshop.vercel.app/api/stripe/connect/webhook)
           echo "Connect unsigned event -> $connect"
           test "$connect" = "400"
+          owner=$(curl -s -o /tmp/owner.json -w '%{http_code}' --max-time 25 https://www.hometowncardshop.com/api/portal/seller-applications)
+          echo "Private seller applications -> $owner"
+          test "$owner" = "401"
+          confirmed=$(curl -s -o /tmp/confirmation.json -w '%{http_code}' --max-time 25 "https://www.hometowncardshop.com/api/orders/confirmation?session_id=cs_bad")
+          echo "Invalid order confirmation reference -> $confirmed"
+          test "$confirmed" = "400"
+          ready=$(curl --fail-with-body -s --max-time 25 https://www.hometowncardshop.com/api/dealer/checkout)
+          echo "Dealer checkout readiness -> $ready"
+          echo "$ready" | grep -q '"available":false'
