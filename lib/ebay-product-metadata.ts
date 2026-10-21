@@ -34,7 +34,8 @@ const sportLabels=['Baseball','Football','Basketball','Hockey','Soccer','Golf','
 const sportAliases:Record<string,string>={
 'Ice Hockey':'Hockey','Auto Racing':'Racing','NASCAR':'Racing',
 'Wrestling':'Wrestling','Pokémon':'Pokémon','Pokemon':'Pokémon',
-'Magic: The Gathering':'Magic','Yu-Gi-Oh!':'Yu-Gi-Oh!'
+'Magic: The Gathering':'Magic','Magic The Gathering':'Magic','MTG':'Magic','Yu-Gi-Oh!':'Yu-Gi-Oh!',
+'Yu Gi Oh':'Yu-Gi-Oh!','One Piece':'One Piece','One Piece Card Game':'One Piece'
 };
 type Details={sport:string;team:string;player:string;year:string;cardSet:string;cardNumber:string};
 export function ebayListingMetadata(title:string,aspects:Record<string,string>={}):Details{
@@ -47,8 +48,12 @@ export function ebayListingMetadata(title:string,aspects:Record<string,string>={
   return '';
  };
  const exactSport=at('Sport','Game','Game Name');
+ const inferredGame=/\b(pok[eé]mon|pokemon tcg)\b/i.test(title)?'Pokémon':
+  /\b(magic[: ]+the gathering|mtg)\b/i.test(title)?'Magic':
+  /\b(yu[ -]?gi[ -]?oh)\b/i.test(title)?'Yu-Gi-Oh!':
+  /\bone piece (tcg|card game|trading card)\b/i.test(title)?'One Piece':'';
  const sport= sportAliases[exactSport]||
-   (sportLabels.find(s=>s.toLowerCase()===exactSport.toLowerCase())||'');
+   (sportLabels.find(s=>s.toLowerCase()===exactSport.toLowerCase())||inferredGame);
  const team=at('Team','Team Name','Franchise')||
   (teams.find(t=>title.toLowerCase().includes(t.toLowerCase()))||'');
  // eBay describes the card's year often as "Season", while year can also
