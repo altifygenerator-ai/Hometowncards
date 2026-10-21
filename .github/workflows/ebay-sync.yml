@@ -1,7 +1,7 @@
 name: Sync connected eBay seller inventory
 on:
-  schedule:
-    - cron: '*/15 * * * *'
+  # Automatic 15-minute sync runs through protected Vercel Cron instead.
+  # Leave GitHub manual dispatch available as emergency fallback only.
   workflow_dispatch:
 jobs:
   ebay-sync:
@@ -13,7 +13,7 @@ jobs:
           HCS_EBAY_SYNC_SECRET: ${{ secrets.HCS_EBAY_SYNC_SECRET }}
         run: |
           if [ -z "$HCS_EBAY_SYNC_SECRET" ]; then
-            echo "No sync secret configured; website-only sellers are unaffected."
+            echo "Manual fallback requires GitHub Actions secret HCS_EBAY_SYNC_SECRET. Automatic sync uses Vercel Cron."
             exit 0
           fi
           curl --fail-with-body --silent --show-error --max-time 55 --retry 2 \

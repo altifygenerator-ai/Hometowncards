@@ -346,3 +346,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
  .shelf-coming-soon-items{gap:7px}
  .shelf-coming-soon-chip{font-size:11px}
 }
+
+
+/* Stan Musial giveaway: same antique-paper and navy palette as the card shop. */
+.giveaway-hero{background:linear-gradient(125deg,#f6ecd8 0%,#fffaf0 63%,#ead9b8 100%);border-top:4px solid #b38343}
+.giveaway-hero .shell{padding-top:52px;padding-bottom:50px}
+.giveaway-hero h1{max-width:900px}
+.giveaway-hero .shell>p{max-width:750px}
+.giveaway-clock-wrap{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-top:26px}
+.giveaway-clock-wrap>p{margin:0;color:#16344d;font-size:15px}
+.giveaway-clock{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.giveaway-clock-unit{min-width:65px;border:1px solid #d4c19e;background:#fffaf0;padding:9px 11px;display:flex;flex-direction:column;text-align:center}
+.giveaway-clock-unit strong{font-family:Georgia,serif;color:#123454;font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.giveaway-clock-unit small{text-transform:uppercase;letter-spacing:.08em;font-size:9px;font-weight:800;color:#805729}
+.giveaway-countdown-ended{font-weight:700;color:#874123}
+.giveaway-prize-placeholder{width:100%;max-width:370px;min-height:245px;margin:20px 0;border:2px dashed #be9a64;background:repeating-linear-gradient(135deg,#efe2ca,#efe2ca 18px,#f5e9d2 18px,#f5e9d2 36px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px}
+.giveaway-prize-placeholder strong{font-family:Georgia,serif;font-size:31px;color:#193a58}
+.giveaway-prize-placeholder span{font-size:12px;color:#745b3a;letter-spacing:.04em;text-transform:uppercase}
+.giveaway-howto{margin:25px 0;padding:18px 22px;background:#f6efe1;border:1px solid #ded0b8}
+.giveaway-howto h3{margin-top:0;margin-bottom:12px;color:#18364f}
+.giveaway-howto p{margin:8px 0;font-size:14px}
+#enter-musial-giveaway{scroll-margin-top:110px}
+#enter-musial-giveaway h2{font-family:Georgia,serif;color:#173550;font-size:27px;margin:12px 0 22px}
+@media(max-width:780px){.giveaway-hero .shell{padding-top:33px;padding-bottom:32px}.giveaway-clock-wrap{align-items:flex-start;flex-direction:column;gap:13px}.giveaway-clock-unit{min-width:59px;padding:8px}.giveaway-clock-unit strong{font-size:20px}}

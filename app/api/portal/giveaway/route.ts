@@ -1,6 +1,7 @@
 import {NextRequest} from 'next/server';
 import {authorized,db,failure,json,PortalError,safeTerm} from '@/lib/server/portal';
 import {sendShopAlert} from '@/lib/server/alerts';
+import {MUSIAL_GIVEAWAY_END_UTC,MUSIAL_GIVEAWAY_CLOSING_INSTANT} from '@/lib/giveaway-config';
 const slug='stan-musial-autograph';
 async function platform(req:NextRequest){const c=await authorized(req,'manage');if(c.platformRole!=='owner'&&c.platformRole!=='admin')throw new PortalError('Platform admin access required.',403);return c}
 type Config={id:string;slug:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;facebook_page_url:string|null;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;winner_entry_id:string|null;drawn_at:string|null};
@@ -33,7 +34,8 @@ export async function POST(req:NextRequest){
   const facebook=safeTerm(b.facebookPageUrl,700);
   const value=b.arvCents===null?null:Number(b.arvCents);
   const starts=typeof b.startsAt==='string'&&b.startsAt?new Date(b.startsAt):null;
-  const ends=typeof b.endsAt==='string'&&b.endsAt?new Date(b.endsAt):null;
+  // This campaign has a firm, owner-requested December 1, 2026 deadline.
+  const ends=new Date(MUSIAL_GIVEAWAY_END_UTC);
   const wantsOpen=b.entriesOpen===true;
   if(title.length<10||description.length<20||(value!==null&&(!Number.isInteger(value)||value<1||value>100000000)))
    throw new PortalError('Provide an accurate prize name, description, and approximate retail value.',400);
@@ -43,7 +45,7 @@ export async function POST(req:NextRequest){
   if(wantsOpen){
    if(/\[(?:ENTER|FILL|SPONSOR|PRIZE|DATE|TIME|REPLACE)[^\]]*\]/i.test(rules)||rules.includes('DRAFT ONLY'))
     throw new PortalError('Complete every rules template placeholder and have the rules reviewed before opening entries.',409);
-   if(!image||value===null||rules.length<300||contact.length<15||!starts||!ends||!Number.isFinite(starts.getTime())||!Number.isFinite(ends.getTime())||ends<=starts||ends<=new Date())
+   if(!image||value===null||rules.length<300||contact.length<15||!starts||!Number.isFinite(starts.getTime())||ends<=starts||MUSIAL_GIVEAWAY_CLOSING_INSTANT<=Date.now())
     throw new PortalError('Add the prize photo, complete official rules and organizer contact, and valid opening/closing dates before starting entries.',400);
    if(!process.env.RESEND_API_KEY||!process.env.RESEND_FROM_EMAIL)throw new PortalError('Giveaway email confirmation is not configured.',503);
   }

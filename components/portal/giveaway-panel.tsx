@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState,useCallback,useRef} from 'react';
+import {MUSIAL_GIVEAWAY_END_UTC,MUSIAL_GIVEAWAY_END_LABEL} from '@/lib/giveaway-config';
 const RULES_DRAFT = `HOMETOWN CARD SHOP STAN MUSIAL AUTOGRAPH CARD GIVEAWAY — OFFICIAL RULES DRAFT (COMPLETE AND REVIEW BEFORE OPENING)
 
 1. NO PURCHASE NECESSARY. A purchase, visit to a store, or Facebook follow is not required and does not increase the chance of winning. This giveaway is free to enter.
@@ -16,8 +17,35 @@ const RULES_DRAFT = `HOMETOWN CARD SHOP STAN MUSIAL AUTOGRAPH CARD GIVEAWAY — 
 12. Facebook disclaimer: This promotion is not sponsored, endorsed, administered by, or associated with Facebook/Meta. Entrants release Facebook to the extent permitted by applicable law.
 
 DRAFT ONLY — obtain review of Arkansas prize-promotion rules before publishing.`;
+
+function buildRules(form:HTMLFormElement){
+ const f=new FormData(form);
+ const prize=String(f.get('prizeTitle')||'').trim()||'[ENTER EXACT PRIZE TITLE]';
+ const description=String(f.get('prizeDescription')||'').trim()||'[ENTER EXACT CARD DESCRIPTION AND AUTHENTICITY STATUS]';
+ const contact=String(f.get('organizerContact')||'').trim()||'[ENTER SPONSOR ADDRESS AND CONTACT EMAIL]';
+ const amount=Number(f.get('arv'));
+ const arv=amount>0&&Number.isFinite(amount)?'$'+amount.toFixed(2):'[ENTER RETAIL VALUE]';
+ const start=String(f.get('startsAt')||'');
+ const begins=start?new Date(start).toLocaleString('en-US',{timeZone:'America/Chicago',dateStyle:'long',timeStyle:'short'})+' Central':'[ENTER OPENING DATE AND TIME]';
+ return [
+ 'HOMETOWN CARD SHOP — STAN MUSIAL AUTOGRAPH CARD GIVEAWAY — OFFICIAL RULES (REVIEW BEFORE PUBLISHING)',
+ '1. NO PURCHASE NECESSARY. A purchase, paid subscription, Facebook share, follow, or like does not improve the chance of winning.',
+ '2. Sponsor: '+contact+'.',
+ '3. Eligibility: Legal residents of the 50 United States and Washington, DC aged 18 or older at the time of entry. The Sponsor, its employees and their immediate households are excluded. Void where prohibited.',
+ '4. Entry period: Begins '+begins+'. Entries close December 1, 2026 at 11:59 PM Central Standard Time. Entry and confirmation timestamps are established by the Sponsor website server.',
+ '5. How to enter: Submit the free form at https://www.hometowncardshop.com/giveaway with your name and a valid email, acknowledge eligibility and rules, and confirm using the emailed verification link by the closing time. Limit one entry per person. Duplicate and fraudulent entries may be disqualified.',
+ '6. Prize: One '+prize+'. Description: '+description+'. Approximate retail value: '+arv+'. No cash alternative or substitution except as permitted by law.',
+ '7. Drawing and odds: One winner selected randomly from eligible, timely confirmed entries after the closing date. Odds depend on the number of eligible verified entries.',
+ '8. Notification: The Sponsor will email the selected person within five business days of the draw. Winner must respond within seven calendar days and confirm eligibility if requested. Otherwise, an alternate winner may be selected at random.',
+ '9. Shipping and taxes: The Sponsor will pay standard shipping to an eligible US address. The winner is responsible for applicable prize taxes and any legally required documentation.',
+ '10. Privacy: Entry data is used for verification, conducting the drawing, contacting the winner and shipping the prize. Marketing emails are optional and never a condition of entry. See https://www.hometowncardshop.com/privacy.',
+ '11. Administration: The Sponsor may reject fraudulent entries or violations of these published rules; the promotion is subject to applicable laws.',
+ '12. This giveaway is not sponsored, endorsed, administered by, or associated with Facebook or Meta. Entrants release Facebook to the extent permitted by law.'
+ ].join('\n\n');
+}
 type Data={giveaway:{id:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;facebook_page_url:string|null;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};entryCount:number;confirmedCount:number;winner:{id:string;name:string;email:string}|null};
 export function GiveawayPanel(){
+ const formRef=useRef<HTMLFormElement|null>(null);
  const photoRef=useRef<HTMLInputElement|null>(null),[photoUrl,setPhotoUrl]=useState(''),[draftRules,setDraftRules]=useState('');
  const [data,setData]=useState<Data|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const load=useCallback(async()=>{const r=await fetch('/api/portal/giveaway',{cache:'no-store'}),x=await r.json();
@@ -29,7 +57,7 @@ export function GiveawayPanel(){
   const when=(s:string)=>{const v=String(fields.get(s)||'');return v?new Date(v).toISOString():null};
   const body={action:'save',prizeTitle:fields.get('prizeTitle'),prizeDescription:fields.get('prizeDescription'),
    prizeImageUrl:fields.get('prizeImageUrl'),arvCents:String(fields.get('arv')||'').trim()?Math.round(Number(fields.get('arv'))*100):null,
-   organizerContact:fields.get('organizerContact'),facebookPageUrl:fields.get('facebookPageUrl'),rules:fields.get('rules'),startsAt:when('startsAt'),endsAt:when('endsAt'),
+   organizerContact:fields.get('organizerContact'),facebookPageUrl:fields.get('facebookPageUrl'),rules:fields.get('rules'),startsAt:when('startsAt'),endsAt:MUSIAL_GIVEAWAY_END_UTC,
    entriesOpen:fields.get('entriesOpen')==='on'};
   if(body.entriesOpen&&!confirm('The published photo, prize, contact, and official rules have been verified and reviewed. Open the public giveaway?')){setBusy(false);return}
   try{const r=await fetch('/api/portal/giveaway',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),x=await r.json();
@@ -52,7 +80,7 @@ export function GiveawayPanel(){
  return <div className="portal-panels"><section className="portal-panel"><h2>Stan Musial Giveaway</h2><p><strong>{data.confirmedCount}</strong> confirmed entries · {data.entryCount} submitted · {g.entries_open?'Entries enabled':'Entries closed'}.</p>
  <p>Before opening, add the real card photo, accurate prize value and description, sponsor mailing/contact information, and finalized official sweepstakes rules. No purchases or follows give additional chances.</p>
  {notice&&<p role="status" className="portal-alert">{notice}</p>}{error&&<p role="alert" className="portal-alert portal-alert-error">{error}</p>}
- <form className="portal-login-form" onSubmit={submit}>
+ <form ref={formRef} className="portal-login-form" onSubmit={submit}>
  <label>Prize title<input name="prizeTitle" required minLength={10} maxLength={180} defaultValue={g.prize_title}/></label>
  <label>Exact card, autograph details and authentication status<textarea name="prizeDescription" required minLength={20} maxLength={1000} defaultValue={g.prize_description} rows={4}/></label>
  <label>Prize photo HTTPS URL<input name="prizeImageUrl" type="url" value={photoUrl} onChange={e=>setPhotoUrl(e.target.value)}/></label>
@@ -61,9 +89,9 @@ export function GiveawayPanel(){
  <label>Official Hometown Card Shop Facebook page URL (optional)<input name="facebookPageUrl" type="url" defaultValue={g.facebook_page_url||''} placeholder="https://www.facebook.com/..."/></label>
  <label>Organizer contact, including address<input name="organizerContact" maxLength={500} defaultValue={g.organizer_contact}/></label>
  <label>Opens (local time)<input name="startsAt" type="datetime-local" defaultValue={local(g.starts_at)}/></label>
- <label>Closes (local time)<input name="endsAt" type="datetime-local" defaultValue={local(g.ends_at)}/></label>
+ <p><strong>Fixed entry deadline:</strong> {MUSIAL_GIVEAWAY_END_LABEL}. Entries close automatically even if the manual switch stays on.</p>
  <label>Official rules<textarea name="rules" rows={12} maxLength={12000} value={draftRules} onChange={e=>setDraftRules(e.target.value)} placeholder="No purchase necessary; eligibility; U.S. 18+; dates and times with timezone; clear entry method; limits; prize ARV; drawing and notification; odds; claim deadline; sponsor full contact/address; required publicity, privacy and Meta disclaimer..."/></label>
- <button type="button" className="button button-outline" onClick={()=>{if(!draftRules||confirm("Replace draft with an editable sample rules checklist?"))setDraftRules(RULES_DRAFT)}}>Insert editable rules draft</button>
+ <button type="button" className="button button-outline" onClick={()=>{if(formRef.current&&(!draftRules||confirm("Replace current rules with a draft based on your real prize details?")))setDraftRules(buildRules(formRef.current))}}>Generate rules from prize details</button> <button type="button" className="button button-outline" onClick={()=>{if(!draftRules||confirm("Replace draft with an editable sample rules checklist?"))setDraftRules(RULES_DRAFT)}}>Insert editable rules draft</button>
  <label><input name="entriesOpen" type="checkbox" defaultChecked={g.entries_open}/> Open entries after all details are legally reviewed</label>
  <button type="submit" disabled={busy} className="button button-primary">{busy?'Saving…':'Save giveaway settings'}</button>
  </form></section>

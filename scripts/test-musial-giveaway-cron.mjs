@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+const read=p=>readFileSync(p,'utf8');
+const cfg=read('lib/giveaway-config.ts');
+const js=ts.transpileModule(cfg,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {MUSIAL_GIVEAWAY_END_UTC,MUSIAL_GIVEAWAY_CLOSING_INSTANT}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+assert.equal(MUSIAL_GIVEAWAY_END_UTC,'2026-12-02T06:00:00.000Z');
+assert.equal(new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'numeric',hour12:true}).format(new Date(MUSIAL_GIVEAWAY_CLOSING_INSTANT)),'December 2, 2026 at 12:00 AM');
+for(const p of ['app/giveaway/page.tsx','app/api/giveaway/enter/route.ts','app/giveaway/verify/route.ts','app/api/portal/giveaway/route.ts']){
+ assert(read(p).includes('MUSIAL_GIVEAWAY_CLOSING_INSTANT'),'Missing hard December 1 cutoff guard: '+p);
+}
+const pub=read('app/giveaway/page.tsx');
+assert(pub.includes('GiveawayCountdown'),'Signup page must show giveaway deadline countdown');
+assert(pub.includes('GiveawayEntry'),'Signup form must remain on public page');
+const entry=read('app/api/giveaway/enter/route.ts');
+assert(entry.includes('verifyTurnstile'),'Free signup must be bot-protected');
+assert(entry.includes('randomBytes(32)'),'Emails must be verified using unpredictable tokens');
+assert(entry.includes('b.marketing===true'),'Marketing consent must be explicit and optional');
+const db=read('app/api/portal/giveaway/route.ts');
+assert(db.includes("process.env.RESEND_API_KEY"),'Do not open when email confirmation is unconfigured');
+assert(db.includes("rules.length<300"),'Do not open without complete giveaway rules');
+assert(db.includes("!image||value===null"),'Do not open without real prize image and stated value');
+const cron=JSON.parse(read('vercel.json'));
+assert.deepEqual(cron.crons,[{path:'/api/ebay-sync',schedule:'*/15 * * * *'}]);
+const job=read('app/api/ebay-sync/route.ts');
+assert(job.includes("const cronSecret=process.env.CRON_SECRET||process.env.EBAY_SYNC_SECRET"),'Sync must require server secret');
+assert(job.includes("token!=='Bearer '+cronSecret"),'Unauthenticated sync must be rejected');
+const gh=read('.github/workflows/ebay-sync.yml');
+assert(!gh.includes("cron: '*/15 * * * *'"),'Do not schedule a second unconfigured 15-minute sync');
+console.log('December 1 CST giveaway and protected every-15-minute eBay Vercel Cron checks passed.');

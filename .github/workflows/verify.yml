@@ -29,6 +29,8 @@ jobs:
         run: node scripts/test-multiseller-categories.mjs
       - name: Verify independent-seller Connect checkout RPC wiring
         run: node scripts/test-dealer-checkout-rpc-allowlist.mjs
+      - name: Verify Musial giveaway deadline and protected scheduled eBay sync
+        run: node scripts/test-musial-giveaway-cron.mjs
       - name: Next.js build
         run: npm run build
         env:
