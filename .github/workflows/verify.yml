@@ -25,6 +25,8 @@ jobs:
         run: node scripts/test-ebay-card-only.mjs
       - name: Verify eBay ECDSA-SHA1 signature handling
         run: node scripts/test-ebay-signed-notification.mjs
+      - name: Multi-seller card category and responsive nav checks
+        run: node scripts/test-multiseller-categories.mjs
       - name: Next.js build
         run: npm run build
         env:
