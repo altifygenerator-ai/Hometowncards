@@ -38,6 +38,13 @@ export function canonicalSport(raw:string):string{
  };
  return aliases[normalized]||SHELVES.find(s=>s.sport?.toLowerCase()===value.toLowerCase())?.sport||value;
 }
+
+/** Only infer a sport when the exact set and year identify it reliably. */
+export function catalogSport(product:Pick<Product,'sport'|'set'|'year'|'category'>):string{
+ const sport=catalogSport(product);
+ if(sport==='Other Cards'&&product.category.trim().toLowerCase()==='trading cards'&&product.set.trim().toLowerCase()==='fleer ultra'&&product.year.trim()==='1993')return 'Baseball';
+ return sport;
+}
 export function shelvesWithCounts(products:Product[]){
   const tally = new Map<string,number>();
   for(const product of products){const sport=canonicalSport(product.sport);tally.set(sport,(tally.get(sport)||0)+1)}
