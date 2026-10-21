@@ -2,7 +2,7 @@
 import Script from 'next/script';import {useCallback,useEffect,useRef,useState} from 'react';
 type Api={render:(e:HTMLElement,o:Record<string,unknown>)=>string;reset:(id:string)=>void};
 const key=process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY||'';
-export function GiveawayEntry({isOpen}:{isOpen:boolean}){
+export function GiveawayEntry({isOpen,isEnded=false}:{isOpen:boolean;isEnded?:boolean}){
  const [token,setToken]=useState(''),[busy,setBusy]=useState(false),[done,setDone]=useState(false),[error,setError]=useState('');
  const slot=useRef<HTMLDivElement|null>(null),widget=useRef<string|null>(null);
  const render=useCallback(()=>{const api=(window as Window&{turnstile?:Api}).turnstile;
@@ -11,7 +11,7 @@ export function GiveawayEntry({isOpen}:{isOpen:boolean}){
    'error-callback':()=>{setToken('');return false}});
  },[]);
  useEffect(()=>{if(isOpen)render()},[render,isOpen]);
- if(!isOpen)return <div className="dealer-thanks"><h2>Giveaway details being finalized</h2><p>The Stan Musial card giveaway is coming soon. We will open free entries after the prize photo, value, and official rules have been published.</p></div>;
+ if(!isOpen)return <div className="dealer-thanks"><h2>{isEnded?'Entries are closed':'Free entries will open soon'}</h2><p>{isEnded?'Entries closed December 1, 2026 at 11:59 PM Central.':'The prize photo, estimated value, sponsor details and official rules must be finalized before the free signup opens. Deadline: December 1, 2026 at 11:59 PM Central.'}</p></div>;
  if(done)return <div className="dealer-thanks"><h2>Check your inbox!</h2><p>Confirm your email with the link we sent. Only confirmed free entries are eligible for the drawing.</p></div>;
  async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError('');
   const f=new FormData(e.currentTarget);const b={name:f.get('name'),email:f.get('email'),
