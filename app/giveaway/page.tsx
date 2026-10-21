@@ -3,10 +3,10 @@ import {db} from '@/lib/server/portal';
 import {GiveawayEntry} from '@/components/giveaway-entry';
 export const dynamic='force-dynamic';
 export const metadata={title:'Stan Musial Autograph Card Giveaway | Hometown Card Shop',description:'A free-entry giveaway for a signed Stan Musial baseball card. No purchase necessary. Follow the official rules.'};
-type G={prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;rules_text:string;organizer_contact:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};
+type G={prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;rules_text:string;organizer_contact:string;facebook_page_url:string|null;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};
 export default async function Giveaway({searchParams}:{searchParams:Promise<{entry?:string}>}){
  const params=await searchParams;
- const items=await db<G[]>('shop_giveaways?select=prize_title,prize_description,prize_image_url,approximate_retail_value_cents,rules_text,organizer_contact,starts_at,ends_at,entries_open,drawn_at&slug=eq.stan-musial-autograph&limit=1');
+ const items=await db<G[]>('shop_giveaways?select=prize_title,prize_description,prize_image_url,approximate_retail_value_cents,rules_text,organizer_contact,facebook_page_url,starts_at,ends_at,entries_open,drawn_at&slug=eq.stan-musial-autograph&limit=1');
  const g=items[0];const now=Date.now();
  const isOpen=!!g?.entries_open&&!!g?.rules_text&&g.approximate_retail_value_cents!==null&&!!g.starts_at&&!!g.ends_at&&now>=Date.parse(g.starts_at)&&now<Date.parse(g.ends_at);
  return <><section className="inner-hero"><div className="shell"><span className="kicker">COLLECTOR GIVEAWAY</span><h1>Win a signed Stan Musial card.</h1><p>One lucky collector. One card with real baseball history. No purchase necessary.</p></div></section>
@@ -18,6 +18,7 @@ export default async function Giveaway({searchParams}:{searchParams:Promise<{ent
  {g?.ends_at&&<p>Entry deadline: {new Date(g.ends_at).toLocaleString('en-US',{timeZone:'America/Chicago',dateStyle:'full',timeStyle:'short'})} Central.</p>}
  <p><strong>Want to shop too?</strong> Browse thousands of cards and free bonus cards with purchases from Hometown Card Shop itself. Purchases never count as entries or improve your odds.</p>
  <Link href="/shop" className="button button-outline">Shop all cards →</Link>
+ {g?.facebook_page_url&&<p><a href={g.facebook_page_url} target="_blank" rel="noopener noreferrer" className="button button-outline">Follow Hometown Card Shop on Facebook ↗</a><br/><small>Following is optional and does not count as an entry or affect your chances of winning.</small></p>}
  {g?.rules_text&&<details style={{marginTop:24}}><summary><strong>Official Giveaway Rules</strong></summary><p style={{whiteSpace:'pre-wrap'}}>{g.rules_text}</p></details>}
  {g?.organizer_contact&&<p>Organizer: {g.organizer_contact}</p>}
  <p className="dealer-form-note">Not sponsored, endorsed, administered by or associated with Facebook. Facebook is released from liability by participants to the extent permitted by law.</p>
