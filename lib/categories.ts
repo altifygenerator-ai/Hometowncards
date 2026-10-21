@@ -31,7 +31,7 @@ export function canonicalSport(raw:string):string{
   pokemon:'Pokémon',pokemontcg:'Pokémon',
   mtg:'Magic',magic:'Magic',magicthegathering:'Magic',
   yugioh:'Yu-Gi-Oh!',yugiohtcg:'Yu-Gi-Oh!',
-  onepiece:'One Piece',onepiecetcg:'One Piece',
+  onepiece:'One Piece',onepiecetcg:'One Piece',onepiececardgame:'One Piece',onepiecetradingcardgame:'One Piece',
   nonsport:'Non-Sport',nonsportcards:'Non-Sport',
   othertcgs:'Other Cards',othercards:'Other Cards',othertradingcards:'Other Cards',
   motorsports:'Racing',nascar:'Racing',memorabilia:'Memorabilia'
