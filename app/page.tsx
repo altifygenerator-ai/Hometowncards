@@ -18,13 +18,13 @@ const storefrontSchema={
 };
 export default async function Home(){
  const products=await getCatalog();
- const featured=recommended(11,products);const cards=featured.slice(0,3);const picks=featured.length>=11?featured.slice(3):featured.slice(0,8);
+ const cardHighlights=recommended(11,products);const cards=cardHighlights.slice(0,3);const picks=cardHighlights.length>=11?cardHighlights.slice(3):cardHighlights.slice(0,8);
  const shelves=shelvesWithCounts(products);
  const priority=['baseball','football','basketball','other-trading-cards','pokemon','magic','yugioh','one-piece','sports-memorabilia'];
  const stocked=shelves.filter(s=>s.count>0);
- const featured=priority.map(id=>stocked.find(s=>s.slug===id)).filter((s):s is (typeof stocked)[number]=>Boolean(s));
+ const featuredShelves=priority.map(id=>stocked.find(s=>s.slug===id)).filter((s):s is (typeof stocked)[number]=>Boolean(s));
  const otherStocked=stocked.filter(s=>!priority.includes(s.slug)).sort((a,b)=>b.count-a.count);
- const selected=[...featured,...otherStocked].slice(0,8);
+ const selected=[...featuredShelves,...otherStocked].slice(0,8);
  const comingSoon=['pokemon','magic','yugioh','one-piece','non-sport'].map(id=>shelves.find(s=>s.slug===id)).filter((s):s is (typeof shelves)[number]=>Boolean(s&&s.count===0));
  return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(storefrontSchema)}}/>
  <section className="corner-hero"><div className="shell corner-hero-layout"><div className="corner-copy"><div className="corner-pretitle"><span>WELCOME IN</span><span>AMITY, ARKANSAS</span><span>EST. 2026</span></div><div className="hand-underline"><span>Pull up a stool. Stay awhile.</span></div><h1>A little card shop.<br/><em>A whole lot to look through.</em></h1><p>Dig through the boxes like you would at the card shop down the road. Real cards, fair prices, easy browsing, and free bonus cards with purchases from our own Hometown Card Shop shelves.</p><div className="corner-actions"><Link className="button button-primary" href="/shop">Dig through the boxes <Icon name="arrow" size={17}/></Link><Link className="corner-text-link" href="/categories">See every shelf →</Link></div><div className="corner-bottom-note"><span className="vintage-star">★</span><span><b>{products.length.toLocaleString('en-US')} individual listings</b><br/>Real cards from the shop, ready to browse</span></div></div>
