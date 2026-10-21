@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {createHash} from 'node:crypto';
 import {db} from '@/lib/server/portal';
+import {MUSIAL_GIVEAWAY_CLOSING_INSTANT} from '@/lib/giveaway-config';
 export const runtime='nodejs';
 export async function GET(req:NextRequest){
  const base=new URL('/giveaway',req.url);
@@ -13,7 +14,7 @@ export async function GET(req:NextRequest){
   const e=entries[0];
   if(!e){base.searchParams.set('entry','invalid');return NextResponse.redirect(base)}
   if(e.confirmed_at){base.searchParams.set('entry','confirmed');return NextResponse.redirect(base)}
-  if(Date.now()>Date.parse(e.confirmation_expires_at)||!e.shop_giveaways?.ends_at||Date.now()>=Date.parse(e.shop_giveaways.ends_at)){
+  if(Date.now()>Date.parse(e.confirmation_expires_at)||!e.shop_giveaways?.ends_at||Date.now()>=Date.parse(e.shop_giveaways.ends_at)||Date.now()>=MUSIAL_GIVEAWAY_CLOSING_INSTANT){
    base.searchParams.set('entry','expired');return NextResponse.redirect(base);
   }
   await db('shop_giveaway_entries?id=eq.'+e.id+'&confirmed_at=is.null',{method:'PATCH',headers:{Prefer:'return=minimal'},
