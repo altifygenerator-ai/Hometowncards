@@ -33,3 +33,4 @@ return <><div className="shop-awning" aria-hidden="true"/><div className="announ
  </div>
 </details>
 </div></nav></header></>;
+}
