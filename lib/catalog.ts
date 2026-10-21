@@ -1,4 +1,5 @@
 import raw from './products.json';
+import {canonicalSport,SHELVES} from './categories';
 
 export type Product = {
   id: string; productId?:string; description?:string; title: string; price: number; quantity: number;
@@ -19,7 +20,7 @@ export const formatMoney = (cents: number) => new Intl.NumberFormat('en-US',{sty
 export function getProduct(id: string){ return byId.get(id); }
 export function getProducts(){ return inventory; }
 export function countSport(sport:string){ return inventory.filter(x=>x.sport===sport).length; }
-export const sports = ['Baseball','Football','Basketball','Golf','Racing','Other Cards','Memorabilia','Collectibles'].map(name=>({name,count:countSport(name)}));
+export const sports = SHELVES.map(s=>s.sport!).filter((name,i,arr)=>arr.indexOf(name)===i).map(name=>({name,count:countSport(name)}));
 export function getTeamOptions(sport?: string, source: Product[] = inventory){
  const tally = new Map<string,number>();
  for(const item of source){if(item.team && (!sport || sport==='All' || item.sport===sport))tally.set(item.team,(tally.get(item.team)||0)+1);}
@@ -29,7 +30,7 @@ export type SearchFilters = { search?:string; sport?:string; team?:string; year?
 export function searchProducts(filters: SearchFilters, source: Product[] = inventory){
  const q=(filters.search||'').trim().toLowerCase();
  let result=source.filter(p=>{
-  if(filters.sport && filters.sport!=='All' && p.sport!==filters.sport)return false;
+  if(filters.sport && filters.sport!=='All' && canonicalSport(p.sport)!==canonicalSport(filters.sport))return false;
   if(filters.seller && p.sellerSlug!==filters.seller)return false;
   if(filters.team && p.team!==filters.team)return false;
   if(filters.year && p.year!==filters.year)return false;
@@ -95,4 +96,9 @@ export function recommended(count=8, source: Product[] = inventory){
  return picked;
 }
 
-export function sportsFor(source: Product[]){ const counts=new Map<string,number>();for(const p of source)counts.set(p.sport,(counts.get(p.sport)||0)+1);return ['Baseball','Football','Basketball','Golf','Racing','Other Cards','Memorabilia','Collectibles'].map(name=>({name,count:counts.get(name)||0}));}
+export function sportsFor(source: Product[]){
+ const counts=new Map<string,number>();for(const p of source){const name=canonicalSport(p.sport);counts.set(name,(counts.get(name)||0)+1)}
+ const known=SHELVES.map(s=>s.sport!).filter((name,i,arr)=>arr.indexOf(name)===i);
+ const extras=[...counts.keys()].filter(name=>!known.includes(name)).sort((a,b)=>a.localeCompare(b));
+ return [...known,...extras].map(name=>({name,count:counts.get(name)||0}));
+}
