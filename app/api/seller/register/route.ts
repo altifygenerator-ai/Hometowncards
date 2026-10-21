@@ -10,6 +10,7 @@ export async function POST(req:NextRequest){
   const b=JSON.parse(raw) as Record<string,unknown>;
   const name=safeTerm(b.shopName,100),email=safeTerm(b.email,254).toLowerCase(),password=typeof b.password==='string'?b.password:'';
   if(name.length<3||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<12||password.length>128)throw new PortalError('Enter a shop name, valid email, and password of at least 12 characters.',400);
+  if(b.agreeTerms!=='true')throw new PortalError('Please accept the Independent Dealer Terms before applying.',400);
   await verifyTurnstile(b.turnstileToken,'seller-register',req);
   const rows=await db<Array<{seller_applications_open:boolean}>>('marketplace_settings?select=seller_applications_open&id=eq.true&limit=1');
   if(!rows[0]?.seller_applications_open)throw new PortalError('Seller registration is not open yet.',503);
@@ -26,7 +27,7 @@ export async function POST(req:NextRequest){
   const userId=body.user?.id||body.id;
   if(!userId||!/^[0-9a-f-]{36}$/i.test(userId))throw new PortalError('Account registration was not confirmed. Contact support.',503);
   const inserted=await db<Array<{id:string}>>('seller_applications',{method:'POST',
-   headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:userId,shop_name:name,contact_email:email,status:'received'})});
+   headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:userId,shop_name:name,contact_email:email,status:'received',terms_version:'2026-10-20-v1',terms_accepted_at:new Date().toISOString()})});
   if(!inserted[0])throw new PortalError('Account created, but the dealer application needs support.',503);
   try{await sendShopAlert('seller_application','Dealer account application',name+' ('+email+') has applied. Review in the shopkeeper dashboard. Application: '+inserted[0].id);}
   catch(e){console.error('Dealer application email delayed',e);}
