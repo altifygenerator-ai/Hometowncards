@@ -21,10 +21,16 @@ export async function POST(req:NextRequest){
   for(const l of b.lines)if(!l||typeof l.id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(l.id)||!Number.isInteger(l.quantity)||l.quantity<1||l.quantity>25||ids.has(l.id))throw new PortalError('Invalid cards or quantities',400);else ids.add(l.id);
   await verifyTurnstile(b.turnstileToken,'checkout',req);
   await assertExpectedStripeAccount();
-  const detail=await checkoutRpc<Deal>('hcs_begin_dealer_checkout',{p_seller:b.sellerId,p_items:b.lines});
+  const detail=await checkoutRpc<Deal>('hcs_begin_dealer_checkout_checked',{p_seller:b.sellerId,p_items:b.lines});
   order=detail.order_id;account=detail.connected_account_id;
   if(!account?.startsWith('acct_'))throw new PortalError('Dealer payment account is unavailable.',503);
   const secret=process.env.STRIPE_SECRET_KEY!;
+  // Never trust only a cached DB payout flag. Verify this is still an active Stripe account.
+  const liveAccount=await fetch('https://api.stripe.com/v1/accounts/'+encodeURIComponent(account),{
+   headers:{Authorization:'Bearer '+secret},cache:'no-store'});
+  const liveDetails=await liveAccount.json() as {id?:string;charges_enabled?:boolean;payouts_enabled?:boolean};
+  if(!liveAccount.ok||liveDetails.id!==account||!liveDetails.charges_enabled||!liveDetails.payouts_enabled)
+   throw new PortalError('Dealer Stripe payouts or charges are not ready.',409);
   const taxSettings=await fetch('https://api.stripe.com/v1/tax/settings',{headers:{Authorization:'Bearer '+secret,'Stripe-Account':account},cache:'no-store'});
   const taxInfo=await taxSettings.json() as {status?:string};
   if(!taxSettings.ok||taxInfo.status!=='active')throw new PortalError('Dealer needs to finish Stripe Tax setup.',409);
@@ -44,12 +50,12 @@ export async function POST(req:NextRequest){
    add('line_items['+i+'][price_data][product_data][name]',l.title.slice(0,120));
    add('line_items['+i+'][quantity]',l.quantity);
   });
-  if(detail.shipping_cents>0){const i=detail.items.length;
-   add('line_items['+i+'][price_data][currency]','usd');
-   add('line_items['+i+'][price_data][unit_amount]',detail.shipping_cents);
-   add('line_items['+i+'][price_data][product_data][name]',detail.shipping_service||'Dealer shipping');
-   add('line_items['+i+'][quantity]',1);
-  }
+  // Use a Stripe shipping rate, not an ordinary merchandise line item. Stripe Tax
+  // can then apply the configured jurisdiction's shipping treatment independently.
+  add('shipping_options[0][shipping_rate_data][type]','fixed_amount');
+  add('shipping_options[0][shipping_rate_data][fixed_amount][currency]','usd');
+  add('shipping_options[0][shipping_rate_data][fixed_amount][amount]',detail.shipping_cents);
+  add('shipping_options[0][shipping_rate_data][display_name]',(detail.shipping_service||'Dealer shipping').slice(0,100));
   const s=await stripePost<{id:string;url?:string}>('checkout/sessions',params,'hcs-dealer-'+order,account);
   if(!s.id||!s.url?.startsWith('https://checkout.stripe.com/'))throw new PortalError('Dealer Checkout could not start.',503);
   session=s.id;
