@@ -61,6 +61,23 @@ export function ShopkeeperDashboard({name,email,sellerId:initial,shops,platformR
  {tab==='giveaway'&&<GiveawayPanel/>}
  {tab==='storefront'&&<ShopProfilePanel sellerId={sellerId}/>} 
  {tab==='interest'&&platformRole&&<DealerInterestPanel/>}
- {tab==='platform'&&<div className="portal-panels"><section className="portal-panel"><h2>One store, marketplace foundations</h2><p>You're the founding seller and the platform owner. Products, orders, shipments, shipping profiles and financial records are separate per seller already.</p><div className="portal-checks"><span>✓ Seller-owned product records</span><span>✓ Role-scoped admin access</span><span>✓ Seller-specific shipping profiles</span><span>✓ Multi-seller order schema</span><span>✓ Connect account structure</span><span>○ Seller signup, approval & verification</span><span>○ Stripe Connect transfers & settlements</span><span>○ Tax, disputes, refunds and notifications</span></div></section><section className="portal-panel"><h2>Public marketplace controls</h2><p>Seller applications, public signups and outside-seller payouts remain closed until the payment, compliance and moderation workflows have been tested. Your main Stripe account is the founding shop's intended payment destination; future seller funds must use a separate Connect settlement model.</p><p><b>Do not switch to marketplace mode by flipping a flag alone.</b> Launching new sellers requires working payment routing, identity checks, dispute handling and shipping responsibilities.</p></section></div>}
+ {tab==='platform'&&<div className="portal-panels">
+ <section className="portal-panel"><h2>Independent dealer marketplace</h2>
+ <p>Hometown Card Shop is the founding seller. Its inventory, free-card rewards and existing Stripe checkout stay separate from every outside dealer.</p>
+ <div className="portal-checks"><span>✓ Public seller applications and admin approval</span>
+ <span>✓ Dealer-owned inventory, manual/CSV imports and eBay connections</span>
+ <span>✓ Private seller dashboards, shipping and return policies</span>
+ <span>✓ Stripe Connect Express onboarding and direct-charge integration</span>
+ <span>✓ Seller-specific shopping deals and platform commission calculations</span>
+ <span>✓ Verified-payment inventory settlement and dealer notification emails</span>
+ <span>✓ Refund and dispute reconciliation records</span>
+ <span>○ Final live Connect checkout test with an approved external dealer</span></div>
+ </section>
+ <section className="portal-panel"><h2>Launch and promotion controls</h2>
+ <p><strong>Seller applications are accepting requests.</strong> Use the Seller applications tab to review applicants, then have each seller complete Stripe, shipping, policies and tax setup before activating their shop.</p>
+ <p><strong>Outside dealer checkout remains gated.</strong> It can only launch after a real connected seller purchase and refund test confirms payout routing, sales tax and fee behavior. The live Hometown checkout remains untouched.</p>
+ <p><strong>Musial giveaway:</strong> Use the Musial giveaway tab to upload the actual card photo, enter its value, finalize the rules and dates, and add the official Facebook page link. Entries stay closed until you explicitly open them.</p>
+ <p><Link href="/sell">View seller registration →</Link> · <Link href="/giveaway">View giveaway page →</Link></p>
+ </section></div>}
  </main></div>
 }
