@@ -53,10 +53,14 @@ end $$;
 drop trigger if exists hcs_new_seller_marketing on public.sellers;
 create trigger hcs_new_seller_marketing after update of status on public.sellers for each row execute function public.hcs_queue_new_seller_email();
 create or replace function public.hcs_queue_new_products_email() returns trigger language plpgsql security definer set search_path=public as $$
-declare seller_status text; key text;
+declare seller_status text; key text; is_newly_eligible boolean;
 begin
- if new.status='published' and new.needs_review=false and new.stock>0
-   and (tg_op='INSERT' or old.status is distinct from 'published' or old.needs_review is distinct from false or coalesce(old.stock,0)=0) then
+ if tg_op='INSERT' then
+  is_newly_eligible:=true;
+ else
+  is_newly_eligible:=old.status is distinct from 'published' or old.needs_review is distinct from false or coalesce(old.stock,0)=0;
+ end if;
+ if new.status='published' and new.needs_review=false and new.stock>0 and is_newly_eligible then
   select status into seller_status from public.sellers where id=new.seller_id;
   if seller_status='approved' then
    key:='products:'||to_char((now() at time zone 'UTC')::date,'YYYY-MM-DD');
