@@ -18,7 +18,8 @@ export async function POST(req:NextRequest){
   const uuid=/^[a-f0-9]{8}-[a-f0-9-]{27,}$/i;
   if(b.action==='approve'||b.action==='decline'){
    if(!uuid.test(b.applicationId||''))throw new PortalError('Invalid application',400);
-   const rows=await db<Array<{contact_email:string;shop_name:string}>>('seller_applications?select=contact_email,shop_name&id=eq.'+b.applicationId+'&limit=1');
+   const rows=await db<Array<{contact_email:string;shop_name:string;terms_accepted_at:string|null}>>('seller_applications?select=contact_email,shop_name,terms_accepted_at&id=eq.'+b.applicationId+'&limit=1');
+   if(b.action==='approve'&&!rows[0]?.terms_accepted_at)throw new PortalError('Seller agreement acceptance is missing. Have the applicant complete the new signup.',409);
    const result=await db<unknown>('rpc/hcs_review_seller_application',{method:'POST',body:JSON.stringify({p_application:b.applicationId,p_actor:c.userId,p_decision:b.action==='approve'?'approved':'declined'})});
    try{await sendShopAlert('seller_application','Seller application '+b.action,String(b.applicationId)+' reviewed by '+c.email)}catch{}
    if(rows[0])try{await emailDealerAccountUpdate(rows[0].contact_email,rows[0].shop_name,b.action==='approve'?'approved':'declined')}
