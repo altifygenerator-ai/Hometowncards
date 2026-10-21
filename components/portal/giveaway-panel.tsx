@@ -1,11 +1,27 @@
 'use client';
 import {useEffect,useState,useCallback,useRef} from 'react';
+const RULES_DRAFT = `HOMETOWN CARD SHOP STAN MUSIAL AUTOGRAPH CARD GIVEAWAY — OFFICIAL RULES DRAFT (COMPLETE AND REVIEW BEFORE OPENING)
+
+1. NO PURCHASE NECESSARY. A purchase, visit to a store, or Facebook follow is not required and does not increase the chance of winning. This giveaway is free to enter.
+2. Sponsor: Hometown Card Shop, [ENTER FULL MAILING ADDRESS], Amity, Arkansas. Questions: [ENTER PUBLIC CONTACT EMAIL].
+3. Eligibility: Open only to legal residents of the 50 United States and District of Columbia who are 18 or older at entry, excluding the Sponsor's owners, employees and their immediate household members. Void where prohibited.
+4. Entry period: Entries open [ENTER START DATE & TIME CENTRAL] and close [ENTER END DATE & TIME CENTRAL].
+5. How to enter: Visit https://www.hometowncardshop.com/giveaway, provide a valid name and email, certify eligibility, accept these official rules, and submit the free entry form. Click the email confirmation link before the entry deadline. Limit one entry per person. Duplicate or fraudulent entries may be disqualified.
+6. Prize: One autographed Stan Musial baseball card. Exact year, manufacturer, condition, autograph authentication status, and photos: [ENTER EXACT CARD DESCRIPTION]. Approximate retail value: [ENTER DOLLAR VALUE]. No substitution or cash alternative unless required by law.
+7. Winner selection: One entry will be selected at random from eligible, confirmed entries after the deadline. Odds depend on the number of eligible entries received.
+8. Winner contact: The Sponsor will email the selected entrant within [ENTER NUMBER] business days. The entrant must reply within [ENTER NUMBER] days and complete any legally required eligibility verification. If a winner cannot be contacted or is ineligible, the Sponsor may select an alternate at random.
+9. Delivery and taxes: Sponsor pays standard shipping to the winner's eligible US address. Winner is responsible for any taxes applicable to the prize. Sponsor may require documentation where legally required.
+10. Privacy: Personal data collected for administering the promotion is used to verify entries, select and contact the winner, and deliver the prize. Marketing emails are optional and require separate affirmative consent. See https://www.hometowncardshop.com/privacy.
+11. General: Sponsor may disqualify entries associated with fraud, automated abuse or rule violations. Any changes or cancellation must comply with applicable law; Sponsor will not substitute a different prize arbitrarily.
+12. Facebook disclaimer: This promotion is not sponsored, endorsed, administered by, or associated with Facebook/Meta. Entrants release Facebook to the extent permitted by applicable law.
+
+DRAFT ONLY — obtain review of Arkansas prize-promotion rules before publishing.`;
 type Data={giveaway:{id:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};entryCount:number;confirmedCount:number;winner:{id:string;name:string;email:string}|null};
 export function GiveawayPanel(){
- const photoRef=useRef<HTMLInputElement|null>(null),[photoUrl,setPhotoUrl]=useState('');
+ const photoRef=useRef<HTMLInputElement|null>(null),[photoUrl,setPhotoUrl]=useState(''),[draftRules,setDraftRules]=useState('');
  const [data,setData]=useState<Data|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const load=useCallback(async()=>{const r=await fetch('/api/portal/giveaway',{cache:'no-store'}),x=await r.json();
-  if(!r.ok)throw Error(x.error||'Unable to load giveaway');setData(x);setPhotoUrl(x.giveaway.prize_image_url||'')},[]);
+  if(!r.ok)throw Error(x.error||'Unable to load giveaway');setData(x);setPhotoUrl(x.giveaway.prize_image_url||'');setDraftRules(x.giveaway.rules_text||'')},[]);
  useEffect(()=>{load().catch(e=>setError(e.message))},[load]);
  async function submit(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();if(!data)return;setBusy(true);setError('');setNotice('');
@@ -45,7 +61,8 @@ export function GiveawayPanel(){
  <label>Organizer contact, including address<input name="organizerContact" maxLength={500} defaultValue={g.organizer_contact}/></label>
  <label>Opens (local time)<input name="startsAt" type="datetime-local" defaultValue={local(g.starts_at)}/></label>
  <label>Closes (local time)<input name="endsAt" type="datetime-local" defaultValue={local(g.ends_at)}/></label>
- <label>Official rules<textarea name="rules" rows={12} maxLength={12000} defaultValue={g.rules_text} placeholder="No purchase necessary; eligibility; U.S. 18+; dates and times with timezone; clear entry method; limits; prize ARV; drawing and notification; odds; claim deadline; sponsor full contact/address; required publicity, privacy and Meta disclaimer..."/></label>
+ <label>Official rules<textarea name="rules" rows={12} maxLength={12000} value={draftRules} onChange={e=>setDraftRules(e.target.value)} placeholder="No purchase necessary; eligibility; U.S. 18+; dates and times with timezone; clear entry method; limits; prize ARV; drawing and notification; odds; claim deadline; sponsor full contact/address; required publicity, privacy and Meta disclaimer..."/></label>
+ <button type="button" className="button button-outline" onClick={()=>{if(!draftRules||confirm("Replace draft with an editable sample rules checklist?"))setDraftRules(RULES_DRAFT)}}>Insert editable rules draft</button>
  <label><input name="entriesOpen" type="checkbox" defaultChecked={g.entries_open}/> Open entries after all details are legally reviewed</label>
  <button type="submit" disabled={busy} className="button button-primary">{busy?'Saving…':'Save giveaway settings'}</button>
  </form></section>
