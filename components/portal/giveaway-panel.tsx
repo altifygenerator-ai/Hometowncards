@@ -41,7 +41,7 @@ function buildRules(form:HTMLFormElement){
  '10. Privacy: Entry data is used for verification, conducting the drawing, contacting the winner and shipping the prize. Marketing emails are optional and never a condition of entry. See https://www.hometowncardshop.com/privacy.',
  '11. Administration: The Sponsor may reject fraudulent entries or violations of these published rules; the promotion is subject to applicable laws.',
  '12. This giveaway is not sponsored, endorsed, administered by, or associated with Facebook or Meta. Entrants release Facebook to the extent permitted by law.'
- ].join('\\n\\n');
+ ].join('\n\n');
 }
 type Data={giveaway:{id:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;facebook_page_url:string|null;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;drawn_at:string|null};entryCount:number;confirmedCount:number;winner:{id:string;name:string;email:string}|null};
 export function GiveawayPanel(){
