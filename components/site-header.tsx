@@ -32,4 +32,4 @@ return <><div className="shop-awning" aria-hidden="true"/><div className="announ
   <Link onClick={()=>setMenu(false)} href="/about">Our story</Link>
  </div>
 </details>
-</div></nav></header></>;
+</div></nav></header></>;}
