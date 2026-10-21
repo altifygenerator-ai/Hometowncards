@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type {Metadata} from 'next';
 // Giveaway enrollment status is read from Supabase at request time, not at build time.
 export const dynamic='force-dynamic';
-export const metadata:Metadata={title:{absolute:'Hometown Card Shop | Sports Cards & Collectibles Marketplace'},description:'Shop Hometown Card Shop's own cards alongside listings from independent sellers. Browse sports cards, vintage singles, and trading cards from Arkansas and beyond. Bonus cards apply only to purchases sold by Hometown Card Shop.',alternates:{canonical:'/'}};
+export const metadata:Metadata={title:{absolute:'Hometown Card Shop | Sports Cards & Collectibles Marketplace'},description:'Shop Hometown Card Shop’s own cards alongside listings from independent sellers. Browse sports cards, vintage singles, and trading cards from Arkansas and beyond. Bonus cards apply only to purchases sold by Hometown Card Shop.',alternates:{canonical:'/'}};
 import {recommended} from '@/lib/catalog';
 import {getCatalog} from '@/lib/catalog-db';
 import {ProductCard} from '@/components/product-card';
