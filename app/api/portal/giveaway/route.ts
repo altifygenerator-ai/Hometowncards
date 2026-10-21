@@ -38,6 +38,8 @@ export async function POST(req:NextRequest){
    throw new PortalError('Provide an accurate prize name, description, and approximate retail value.',400);
   if(image&&!/^https:\/\/[^\s]+$/i.test(image))throw new PortalError('Giveaway picture must be an HTTPS image URL.',400);
   if(wantsOpen){
+   if(/\[(?:ENTER|FILL|SPONSOR|PRIZE|DATE|TIME|REPLACE)[^\]]*\]/i.test(rules)||rules.includes('DRAFT ONLY'))
+    throw new PortalError('Complete every rules template placeholder and have the rules reviewed before opening entries.',409);
    if(!image||value===null||rules.length<300||contact.length<15||!starts||!ends||!Number.isFinite(starts.getTime())||!Number.isFinite(ends.getTime())||ends<=starts||ends<=new Date())
     throw new PortalError('Add the prize photo, complete official rules and organizer contact, and valid opening/closing dates before starting entries.',400);
    if(!process.env.RESEND_API_KEY||!process.env.RESEND_FROM_EMAIL)throw new PortalError('Giveaway email confirmation is not configured.',503);
