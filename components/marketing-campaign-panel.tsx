@@ -1,0 +1,7 @@
+'use client';
+import {useState} from 'react';
+export function MarketingCampaignPanel(){
+ const [title,setTitle]=useState(''),[body,setBody]=useState(''),[href,setHref]=useState('/shop'),[state,setState]=useState('');
+ async function submit(e:React.FormEvent){e.preventDefault();setState('Scheduling…');try{const r=await fetch('/api/marketing/campaign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,body,href})});const d=await r.json();if(!r.ok)throw Error(d.error||'Campaign was not scheduled.');setState('Promo queued. It will go only to confirmed subscribers.');setTitle('');setBody('')}catch(e){setState(e instanceof Error?e.message:'Could not schedule campaign.')}}
+ return <main className="marketing-admin shell"><p className="kicker">HOMETOWN CARD SHOP · MARKETPLACE</p><h1>Send a shop note</h1><p>Promotions go only to confirmed email subscribers. Keep the message useful and include the offer details and end date when applicable.</p><form onSubmit={submit}><label>Subject<input value={title} onChange={e=>setTitle(e.target.value)} maxLength={120} required minLength={4}/></label><label>Message<textarea value={body} onChange={e=>setBody(e.target.value)} maxLength={1800} required minLength={10} rows={6}/></label><label>Shop link<input value={href} onChange={e=>setHref(e.target.value)} required pattern="/.*"/></label><button className="button button-primary">Queue promo email</button>{state&&<p role="status">{state}</p>}</form></main>
+}
