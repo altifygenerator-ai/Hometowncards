@@ -2,16 +2,15 @@ import {NextRequest,NextResponse} from 'next/server';
 import {db} from '@/lib/server/portal';
 import {brandedEmail,newToken,plainFor,sendEmail,tokenHash,SITE} from '@/lib/server/branded-email';
 export const runtime='nodejs',maxDuration=60;
-type Event={id:string;event_type:'new_seller'|'new_products'|'promo';title:string;body:string;href:string;cursor_subscriber_id:string|null};
+type Event={id:string;event_type:'new_seller'|'new_products'|'promo';title:string;body:string;href:string;cursor_subscriber_id:string|null;locked_until:string|null};
 type Subscriber={id:string;email:string};
 export async function GET(req:NextRequest){
  const secret=process.env.CRON_SECRET;
  if(!secret||req.headers.get('authorization')!=='Bearer '+secret)return NextResponse.json({error:'Unauthorized'},{status:401});
  let processed=0,failed=0;
  try{
-  const events=await db<Event[]>('marketing_events?select=id,event_type,title,body,href,cursor_subscriber_id&status=in.(queued,sending)&scheduled_for=lte.'+encodeURIComponent(new Date().toISOString())+'&order=scheduled_for.asc&limit=1');
+  const events=await db<Event[]>('rpc/hcs_claim_marketing_event',{method:'POST',body:'{}'});
   const event=events[0];if(!event)return NextResponse.json({ok:true,processed,failed});
-  await db('marketing_events?id=eq.'+event.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'sending'})});
   let query='marketing_subscribers?select=id,email&status=eq.active&order=id.asc&limit=41';
   if(event.cursor_subscriber_id)query+='&id=gt.'+event.cursor_subscriber_id;
   const subscribers=await db<Subscriber[]>(query);
@@ -31,9 +30,9 @@ export async function GET(req:NextRequest){
    }catch(e){status='failed';failed++;console.error('Marketing email delivery failed',event.id,e)}
    await db('marketing_deliveries',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({event_id:event.id,subscriber_id:subscriber.id,status})});
    event.cursor_subscriber_id=subscriber.id;
-   await db('marketing_events?id=eq.'+event.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({cursor_subscriber_id:subscriber.id})});
+   await db('marketing_events?id=eq.'+event.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({cursor_subscriber_id:subscriber.id,locked_until:null})});
   }
-  if(subscribers.length<=40)await db('marketing_events?id=eq.'+event.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'sent',sent_at:new Date().toISOString()})});
+  if(subscribers.length<=40)await db('marketing_events?id=eq.'+event.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'sent',sent_at:new Date().toISOString(),locked_until:null})});
   return NextResponse.json({ok:true,processed,failed,eventId:event.id,complete:subscribers.length<=40});
  }catch(e){console.error('Marketing email automation failed',e);return NextResponse.json({error:'Email automation could not complete.'},{status:500})}
 }

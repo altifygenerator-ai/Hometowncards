@@ -10,8 +10,9 @@ export async function POST(req:NextRequest){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||b.consent!==true)throw new PortalError('Enter a valid email and confirm you want shop updates.',400);
   await verifyTurnstile(b.turnstileToken,'marketing-signup',req);
   const confirm=newToken(),unsub=newToken(),now=new Date();
-  const existing=await db<Array<{id:string;status:string}>>('marketing_subscribers?select=id,status&email=eq.'+encodeURIComponent(email)+'&limit=1');
+  const existing=await db<Array<{id:string;status:string;updated_at:string}>>('marketing_subscribers?select=id,status,updated_at&email=eq.'+encodeURIComponent(email)+'&limit=1');
   if(existing[0]?.status==='active')return NextResponse.json({ok:true,message:'You are already on the list.'});
+  if(existing[0]?.status==='pending'&&existing[0].updated_at&&now.getTime()-Date.parse(existing[0].updated_at)<15*60000)return NextResponse.json({ok:true,message:'Check your inbox for a confirmation link, or try again later.'});
   const row={email,status:'pending',consent_source:'website_signup',consent_at:now.toISOString(),confirmed_at:null,confirmation_hash:tokenHash(confirm),confirmation_expires_at:new Date(now.getTime()+48*3600000).toISOString(),unsubscribe_hash:tokenHash(unsub),updated_at:now.toISOString()};
   if(existing[0])await db('marketing_subscribers?id=eq.'+existing[0].id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(row)});
   else await db('marketing_subscribers',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(row)});
