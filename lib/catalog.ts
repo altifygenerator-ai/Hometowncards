@@ -1,5 +1,5 @@
 import raw from './products.json';
-import {canonicalSport,SHELVES} from './categories';
+import {canonicalSport,catalogSport,SHELVES} from './categories';
 
 export type Product = {
   id: string; productId?:string; description?:string; title: string; price: number; quantity: number;
@@ -10,7 +10,7 @@ export type Product = {
 };
 
 const inventory = (raw as Omit<Product,'sellerId'|'sellerName'|'sellerSlug'>[]).map(p=>({
- ...p,sellerId:'hometown',sellerName:'Hometown Card Shop',sellerSlug:'hometown-card-shop'
+ ...p,sport:catalogSport(p),sellerId:'hometown',sellerName:'Hometown Card Shop',sellerSlug:'hometown-card-shop'
 }));
 const byId = new Map(inventory.map(product => [product.id,product]));
 export const TOTAL_ITEMS = inventory.length;
