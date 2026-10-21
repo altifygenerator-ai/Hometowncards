@@ -28,10 +28,10 @@ export function canonicalSport(raw:string):string{
  if(!value)return 'Other Cards';
  const normalized=value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
  const aliases:Record<string,string>={
-  pokemon:'Pokémon',pokemontcg:'Pokémon',
-  mtg:'Magic',magic:'Magic',magicthegathering:'Magic',
+  pokemon:'Pokémon',pokemontcg:'Pokémon',pokemontradingcardgame:'Pokémon',
+  mtg:'Magic',magic:'Magic',magicthegathering:'Magic',magicthegatheringtcg:'Magic',
   yugioh:'Yu-Gi-Oh!',yugiohtcg:'Yu-Gi-Oh!',
-  onepiece:'One Piece',onepiecetcg:'One Piece',
+  onepiece:'One Piece',onepiecetcg:'One Piece',onepiececardgame:'One Piece',
   nonsport:'Non-Sport',nonsportcards:'Non-Sport',
   othertcgs:'Other Cards',othercards:'Other Cards',othertradingcards:'Other Cards',
   motorsports:'Racing',nascar:'Racing',memorabilia:'Memorabilia'
