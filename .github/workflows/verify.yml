@@ -27,6 +27,8 @@ jobs:
         run: node scripts/test-ebay-signed-notification.mjs
       - name: Multi-seller card category and responsive nav checks
         run: node scripts/test-multiseller-categories.mjs
+      - name: Verify independent-seller Connect checkout RPC wiring
+        run: node scripts/test-dealer-checkout-rpc-allowlist.mjs
       - name: Next.js build
         run: npm run build
         env:
