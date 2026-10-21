@@ -3,7 +3,7 @@ import {authorized,db,failure,json,PortalError,safeTerm} from '@/lib/server/port
 import {sendShopAlert} from '@/lib/server/alerts';
 const slug='stan-musial-autograph';
 async function platform(req:NextRequest){const c=await authorized(req,'manage');if(c.platformRole!=='owner'&&c.platformRole!=='admin')throw new PortalError('Platform admin access required.',403);return c}
-type Config={id:string;slug:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;winner_entry_id:string|null;drawn_at:string|null};
+type Config={id:string;slug:string;prize_title:string;prize_description:string;prize_image_url:string|null;approximate_retail_value_cents:number|null;organizer_contact:string;facebook_page_url:string|null;rules_text:string;starts_at:string|null;ends_at:string|null;entries_open:boolean;winner_entry_id:string|null;drawn_at:string|null};
 export async function GET(req:NextRequest){
  try{await platform(req);
   const arr=await db<Config[]>('shop_giveaways?select=*&slug=eq.'+slug+'&limit=1');
@@ -30,12 +30,15 @@ export async function POST(req:NextRequest){
   const title=safeTerm(b.prizeTitle,180),description=safeTerm(b.prizeDescription,1000),contact=safeTerm(b.organizerContact,500);
   const rules=safeTerm(b.rules,12000);
   const image=safeTerm(b.prizeImageUrl,1400);
+  const facebook=safeTerm(b.facebookPageUrl,700);
   const value=b.arvCents===null?null:Number(b.arvCents);
   const starts=typeof b.startsAt==='string'&&b.startsAt?new Date(b.startsAt):null;
   const ends=typeof b.endsAt==='string'&&b.endsAt?new Date(b.endsAt):null;
   const wantsOpen=b.entriesOpen===true;
   if(title.length<10||description.length<20||(value!==null&&(!Number.isInteger(value)||value<1||value>100000000)))
    throw new PortalError('Provide an accurate prize name, description, and approximate retail value.',400);
+  if(facebook&&!/^https:\/\/(?:www\.|m\.)?facebook\.com\/[a-zA-Z0-9_.?=&/%-]+$/.test(facebook))
+    throw new PortalError('Use the exact official Facebook page link, not a search result.',400);
   if(image&&!/^https:\/\/[^\s]+$/i.test(image))throw new PortalError('Giveaway picture must be an HTTPS image URL.',400);
   if(wantsOpen){
    if(/\[(?:ENTER|FILL|SPONSOR|PRIZE|DATE|TIME|REPLACE)[^\]]*\]/i.test(rules)||rules.includes('DRAFT ONLY'))
@@ -45,13 +48,13 @@ export async function POST(req:NextRequest){
    if(!process.env.RESEND_API_KEY||!process.env.RESEND_FROM_EMAIL)throw new PortalError('Giveaway email confirmation is not configured.',503);
   }
   if(entries.length&&(title!==g.prize_title||description!==g.prize_description||value!==g.approximate_retail_value_cents||
-   image!==(g.prize_image_url||'')||rules!==g.rules_text||contact!==g.organizer_contact||
+   image!==(g.prize_image_url||'')||facebook!==(g.facebook_page_url||'')||rules!==g.rules_text||contact!==g.organizer_contact||
    starts?.getTime()!==(g.starts_at?Date.parse(g.starts_at):undefined)||ends?.getTime()!==(g.ends_at?Date.parse(g.ends_at):undefined)))
     throw new PortalError('Prize and rules cannot be changed after entries have begun. Close entries or contact support.',409);
   if(g.drawn_at&&wantsOpen)throw new PortalError('This giveaway has already been drawn.',409);
   await db('shop_giveaways?id=eq.'+g.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({
    prize_title:title,prize_description:description,prize_image_url:image||null,approximate_retail_value_cents:value,
-   organizer_contact:contact,rules_text:rules,starts_at:starts?.toISOString()||null,ends_at:ends?.toISOString()||null,entries_open:wantsOpen
+   organizer_contact:contact,facebook_page_url:facebook||null,rules_text:rules,starts_at:starts?.toISOString()||null,ends_at:ends?.toISOString()||null,entries_open:wantsOpen
   })});
   return json({ok:true});
  }catch(e){return failure(e)}
