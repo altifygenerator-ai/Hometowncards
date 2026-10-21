@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import {searchProducts,sportsFor,getTeamOptions} from '@/lib/catalog';
 import type {SearchFilters} from '@/lib/catalog';
 import {getCatalog} from '@/lib/catalog-db';import {ProductCard} from '@/components/product-card';import {Icon} from '@/components/icons';
-export const metadata:Metadata={title:'Shop Sports Cards & Collectibles',description:'Find baseball, football, basketball and other trading cards. Filter by sport, team, year and price at Hometown Card Shop.',alternates:{canonical:'/shop'}};
+export const metadata:Metadata={title:'Sports Cards & Collectibles Marketplace',description:'Shop Hometown Card Shop cards and listings from approved independent sellers. Filter trading cards by sport, team, year, shop and price.',alternates:{canonical:'/shop'}};
 type Props={searchParams:Promise<{[key:string]:string|string[]|undefined}>};
 function first(p:string|string[]|undefined){return typeof p==='string'?p:''}
 export default async function Shop({searchParams}:Props){const p=await searchParams;const filters:SearchFilters={search:first(p.search),sport:first(p.sport),team:first(p.team),year:first(p.year),sort:first(p.sort),page:first(p.page),seller:first(p.seller)};
@@ -11,7 +11,7 @@ export default async function Shop({searchParams}:Props){const p=await searchPar
  const selectedSport=filters.sport||'All';
  const teams=getTeamOptions(selectedSport,catalog);const sellers=[...new Set(catalog.map(x=>x.sellerSlug))];
  function pageHref(n:number){const out=new URLSearchParams();for(const [k,v] of Object.entries(filters)){if(v && k!=='page')out.set(k,v)}out.set('page',String(n));return '/shop?'+out.toString();}
- return <><div className="shop-intro"><div className="shell"><span className="kicker">FLIP THROUGH THE BOXES</span><h1>What'll you find today?</h1><p>Take your time. Pick a sport, search an old favorite, or browse a box from start to finish.</p></div></div>
+ return <><div className="shop-intro"><div className="shell"><span className="kicker">FLIP THROUGH THE BOXES</span><h1>What'll you find today?</h1><p>Browse our own cards and collections from approved independent sellers. Filter by sport, player, year, price, or shop. Each seller sets their own shipping and return policies.</p></div></div>
  <div className="shell breadcrumbs"><Link href="/">Home</Link> / <span>Browse the card boxes</span></div>
  <div className="shell shop-layout"><aside className="shop-sidebar"><div className="filter-label"><Icon name="filter" size={19}/> FILTER YOUR SEARCH</div><form action="/shop" className="filter-form">
   <label htmlFor="q">Player, set, or keyword</label><input id="q" type="search" name="search" defaultValue={filters.search||''} placeholder="e.g. Nolan Ryan, 1992..."/>
