@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import type {Metadata} from 'next';
+// Giveaway enrollment status is read from Supabase at request time, not at build time.
+export const dynamic='force-dynamic';
 export const metadata:Metadata={title:{absolute:'Hometown Card Shop | Sports Cards, Vintage Singles & Trading Cards'},description:'Shop thousands of baseball, football, basketball and vintage trading cards from Amity, Arkansas. Real cards, fair prices, and free bonus cards with Hometown Card Shop purchases.',alternates:{canonical:'/'}};
 import {recommended} from '@/lib/catalog';
 import {getCatalog} from '@/lib/catalog-db';
