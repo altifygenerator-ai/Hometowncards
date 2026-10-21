@@ -20,7 +20,7 @@ export default async function Giveaway({searchParams}:{searchParams:Promise<{ent
  return <><section className="inner-hero giveaway-hero"><div className="shell"><span className="kicker">FREE COLLECTOR GIVEAWAY</span><h1>Win a signed Stan Musial card.</h1><p>One lucky collector. One card with baseball history. No purchase or Facebook follow necessary.</p><div className="giveaway-clock-wrap"><p><strong>Closes: {MUSIAL_GIVEAWAY_END_LABEL}</strong></p><GiveawayCountdown/><a href="#enter-musial-giveaway" className="button button-primary">{isOpen?'Enter for free →':ended?'Giveaway ended':'See giveaway details ↓'}</a></div></div></section>
  <section className="shell dealer-landing"><div className="dealer-grid">
  <div className="dealer-benefits giveaway-prize"><span className="kicker">THE PRIZE</span><h2>{g?.prize_title||'1962 Topps #50 Stan Musial signed card'}</h2>
- <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:14,maxWidth:720,alignItems:'start'}}>
+ <div className="giveaway-photos">
   {prizePhotos.map((photo)=><figure key={photo.src} style={{margin:0}}><img src={photo.src} alt={photo.alt} style={{display:'block',width:'100%',height:'auto',maxHeight:520,objectFit:'contain',borderRadius:12}}/><figcaption style={{fontSize:13,marginTop:7,opacity:.72}}>{photo.label}</figcaption></figure>)}
  </div>
  <p>{g?.prize_description||'1962 Topps #50 Stan Musial card bearing an on-card signature. The exact card shown in the prize photos will be awarded.'}</p>
