@@ -88,7 +88,7 @@ export function ShopkeeperDashboard({name,email,sellerId:initial,shops,platformR
  <p><strong>Seller applications are accepting requests.</strong> Use the Seller applications tab to review applicants, then have each seller complete Stripe, shipping, policies and tax setup before activating their shop.</p>
  <p><strong>Outside dealer checkout remains gated.</strong> It can only launch after a real connected seller purchase and refund test confirms payout routing, sales tax and fee behavior. The live Hometown checkout remains untouched.</p>
  <p><strong>Musial giveaway:</strong> Use the Musial giveaway tab to upload the actual card photo, enter its value, finalize the rules and dates, and add the official Facebook page link. Entries stay closed until you explicitly open them.</p>
- <p><Link href="/sell">View seller registration →</Link> · <Link href="/giveaway">View giveaway page →</Link></p>
+ <p><Link href="/admin/marketing">Create a promo email →</Link></p><p><Link href="/sell">View seller registration →</Link> · <Link href="/giveaway">View giveaway page →</Link></p>
  </section></div>}
  </main></div>
 }

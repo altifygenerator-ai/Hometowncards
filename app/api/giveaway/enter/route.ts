@@ -33,7 +33,7 @@ export async function POST(req:NextRequest){
    await db('shop_giveaway_entries?id=eq.'+prev[0].id+'&confirmed_at=is.null',{
     method:'PATCH',headers:{Prefer:'return=minimal'},
     body:JSON.stringify({confirmation_hash:hash(token),confirmation_expires_at:new Date(now+48*3600000).toISOString(),
-     confirmation_last_sent_at:sentAt,confirmation_send_count:prev[0].confirmation_send_count+1})});
+     confirmation_last_sent_at:sentAt,confirmation_send_count:prev[0].confirmation_send_count+1,newsletter_opt_in:b.marketing===true})});
   }else{
    const entries=await db<Array<{id:string}>>('shop_giveaway_entries',{method:'POST',headers:{Prefer:'return=representation'},
     body:JSON.stringify({giveaway_id:g.id,name,email,newsletter_opt_in:b.marketing===true,

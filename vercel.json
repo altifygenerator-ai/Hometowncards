@@ -4,6 +4,10 @@
     {
       "path": "/api/ebay-sync",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/marketing/automation",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
