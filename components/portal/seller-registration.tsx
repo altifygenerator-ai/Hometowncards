@@ -13,6 +13,7 @@ export function SellerRegistration(){
  useEffect(()=>{render()},[render]);
  async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setError('');setBusy(true);
   const values=Object.fromEntries(new FormData(e.currentTarget).entries());
+  values.agreeTerms=values.agreeTerms==='on'?'true':'false';
   try{const r=await fetch('/api/seller/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...values,turnstileToken:token})});
    const b=await r.json();if(!r.ok||!b.ok)throw Error(b.error||'Registration failed');setComplete(true);
   }catch(x){setError(x instanceof Error?x.message:'Could not create account');setToken('');
@@ -26,6 +27,7 @@ export function SellerRegistration(){
    <label>Email<input name="email" type="email" required autoComplete="email" maxLength={254}/></label>
    <label>Password<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password"/></label>
   </div>
+  <label style={{display:'flex',alignItems:'flex-start',gap:8}}><input name="agreeTerms" type="checkbox" value="on" required style={{width:'auto',marginTop:4}}/><span>I have read and agree to the <a href="/seller-terms" target="_blank" rel="noopener noreferrer">Independent Dealer Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>
   <p className="dealer-form-note">Applications are reviewed before shops are made public. You'll need an email-verified account, your own inventory and shipping rules, and Stripe Connect for payouts. No purchase or membership payment is required to apply.</p>
   {key?<><Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" onLoad={render} strategy="afterInteractive"/><div ref={slot} aria-label="Security verification"/></>:<p>Secure registration is unavailable right now.</p>}
   {error&&<p role="alert" className="dealer-error">{error}</p>}
