@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import {useState} from 'react';
+import {SHELVES} from '@/lib/categories';
 export function NewCardListing({sellerId}:{sellerId:string}){
  const [fields,setFields]=useState({title:'',sku:'',sport:'Baseball',team:'',player:'',card_year:'',card_set:'',card_number:'',condition:'',category:'',inventory_location:'',description:'',price:'1.00',stock:'1'});
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
@@ -18,9 +19,11 @@ export function NewCardListing({sellerId}:{sellerId:string}){
   <p>List a card directly on Hometown Card Shop without creating an eBay listing. Add details here, then upload photos and mark the card reviewed before it appears for shoppers.</p>
   {error&&<p role="alert" className="portal-alert portal-alert-error">{error}</p>}
   <form onSubmit={submit}><div className="portal-form-grid">{labels.map(([key,label])=><label key={key}>{label}
-   <input required={['title','sku','price','stock'].includes(key)} type={key==='stock'||key==='price'?'number':'text'}
+   {key==='sport'?<select value={fields.sport} onChange={e=>setFields(f=>({...f,sport:e.target.value}))}>
+   {SHELVES.map(s=><option key={s.slug} value={s.sport}>{s.name}</option>)}
+  </select>:<input required={['title','sku','price','stock'].includes(key)} type={key==='stock'||key==='price'?'number':'text'}
     min={key==='stock'?'0':key==='price'?'0.01':undefined} step={key==='price'?'0.01':key==='stock'?'1':undefined}
-    value={fields[key]} onChange={e=>setFields(f=>({...f,[key]:e.target.value}))}/></label>)}</div>
+    value={fields[key]} onChange={e=>setFields(f=>({...f,[key]:e.target.value}))}/>}</label>)}</div>
    <label className="hcs-editor-area">Description<textarea rows={4} value={fields.description} onChange={e=>setFields(f=>({...f,description:e.target.value}))}/></label>
    <button className="button button-primary" disabled={busy} type="submit">{busy?'Creating listing…':'Create listing and add photos →'}</button>
   </form></section></div>;
