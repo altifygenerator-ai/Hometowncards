@@ -7,7 +7,7 @@ const start=checkout.indexOf('if(!/^hcs_(');
 assert(start>0,'Checkout RPC allowlist must be explicitly restrictive');
 const end=checkout.indexOf(')$/.test(functionName)',start);
 assert(end>start,'Checkout RPC allowlist format changed');
-const allowed=new RegExp('^hcs_('+checkout.slice(start+10,end)+')$');
+const allowed=new RegExp('^hcs_('+checkout.slice(start+'if(!/^hcs_('.length,end)+')$');
 const required=[
  ['hcs_begin_dealer_checkout_checked',caller],
  ['hcs_settle_dealer_checkout',webhook],
