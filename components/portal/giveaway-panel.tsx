@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState,useCallback,useRef} from 'react';
+import {MUSIAL_GIVEAWAY_END_UTC,MUSIAL_GIVEAWAY_END_LABEL} from '@/lib/giveaway-config';
 const RULES_DRAFT = `HOMETOWN CARD SHOP STAN MUSIAL AUTOGRAPH CARD GIVEAWAY — OFFICIAL RULES DRAFT (COMPLETE AND REVIEW BEFORE OPENING)
 
 1. NO PURCHASE NECESSARY. A purchase, visit to a store, or Facebook follow is not required and does not increase the chance of winning. This giveaway is free to enter.
@@ -29,7 +30,7 @@ export function GiveawayPanel(){
   const when=(s:string)=>{const v=String(fields.get(s)||'');return v?new Date(v).toISOString():null};
   const body={action:'save',prizeTitle:fields.get('prizeTitle'),prizeDescription:fields.get('prizeDescription'),
    prizeImageUrl:fields.get('prizeImageUrl'),arvCents:String(fields.get('arv')||'').trim()?Math.round(Number(fields.get('arv'))*100):null,
-   organizerContact:fields.get('organizerContact'),facebookPageUrl:fields.get('facebookPageUrl'),rules:fields.get('rules'),startsAt:when('startsAt'),endsAt:when('endsAt'),
+   organizerContact:fields.get('organizerContact'),facebookPageUrl:fields.get('facebookPageUrl'),rules:fields.get('rules'),startsAt:when('startsAt'),endsAt:MUSIAL_GIVEAWAY_END_UTC,
    entriesOpen:fields.get('entriesOpen')==='on'};
   if(body.entriesOpen&&!confirm('The published photo, prize, contact, and official rules have been verified and reviewed. Open the public giveaway?')){setBusy(false);return}
   try{const r=await fetch('/api/portal/giveaway',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),x=await r.json();
@@ -61,7 +62,7 @@ export function GiveawayPanel(){
  <label>Official Hometown Card Shop Facebook page URL (optional)<input name="facebookPageUrl" type="url" defaultValue={g.facebook_page_url||''} placeholder="https://www.facebook.com/..."/></label>
  <label>Organizer contact, including address<input name="organizerContact" maxLength={500} defaultValue={g.organizer_contact}/></label>
  <label>Opens (local time)<input name="startsAt" type="datetime-local" defaultValue={local(g.starts_at)}/></label>
- <label>Closes (local time)<input name="endsAt" type="datetime-local" defaultValue={local(g.ends_at)}/></label>
+ <p><strong>Fixed entry deadline:</strong> {MUSIAL_GIVEAWAY_END_LABEL}. Entries will close automatically, including if you forget to switch them off.</p>
  <label>Official rules<textarea name="rules" rows={12} maxLength={12000} value={draftRules} onChange={e=>setDraftRules(e.target.value)} placeholder="No purchase necessary; eligibility; U.S. 18+; dates and times with timezone; clear entry method; limits; prize ARV; drawing and notification; odds; claim deadline; sponsor full contact/address; required publicity, privacy and Meta disclaimer..."/></label>
  <button type="button" className="button button-outline" onClick={()=>{if(!draftRules||confirm("Replace draft with an editable sample rules checklist?"))setDraftRules(RULES_DRAFT)}}>Insert editable rules draft</button>
  <label><input name="entriesOpen" type="checkbox" defaultChecked={g.entries_open}/> Open entries after all details are legally reviewed</label>
