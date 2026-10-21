@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const server=readFileSync('app/api/giveaway/enter/route.ts','utf8');
+const ui=readFileSync('components/giveaway-entry.tsx','utf8');
+const migration=readFileSync('supabase/giveaway-confirmation-resends.sql','utf8');
+assert(server.includes('now-Date.parse(prev[0].confirmation_last_sent_at)<15*60000'),'Resend cooldown must be server enforced');
+assert(server.includes('prev[0].confirmation_send_count>=8'),'Prevent indefinite resend spam');
+assert(server.includes("prev[0]?.confirmed_at"),'Confirmed addresses must never be reentered');
+assert(server.includes('confirmation_hash:hash(token)'),'Each resend must rotate the verification token');
+assert(server.includes('if(prev[0])'),'Existing pending entries must be reused');
+assert(server.includes("confirmation_expires_at:new Date(now+48*3600000)"),'Resend link must have a new expiry');
+assert(server.includes('if(inserted)'),'Only new entries should be removed after an email failure');
+assert(server.includes("verifyTurnstile"),'All entry and resend requests must verify bot challenge');
+assert(migration.includes('confirmation_last_sent_at')&&migration.includes('confirmation_send_count'),'Database must store resend throttling');
+assert(ui.includes('submit the form again after 15 minutes'),'Show user how to resend');
+console.log('Giveaway confirmation resend throttling and email-link rotation safeguards passed.');

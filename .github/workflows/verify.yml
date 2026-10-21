@@ -31,6 +31,8 @@ jobs:
         run: node scripts/test-dealer-checkout-rpc-allowlist.mjs
       - name: Verify Musial giveaway deadline and protected scheduled eBay sync
         run: node scripts/test-musial-giveaway-cron.mjs
+      - name: Verify giveaway confirmation email resend safety
+        run: node scripts/test-giveaway-confirmation-resend.mjs
       - name: Next.js build
         run: npm run build
         env:

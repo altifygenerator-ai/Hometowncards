@@ -12,7 +12,7 @@ export function GiveawayEntry({isOpen,isEnded=false}:{isOpen:boolean;isEnded?:bo
  },[]);
  useEffect(()=>{if(isOpen)render()},[render,isOpen]);
  if(!isOpen)return <div className="dealer-thanks"><h2>{isEnded?'Entries are closed':'Free entries will open soon'}</h2><p>{isEnded?'Entries closed December 1, 2026 at 11:59 PM Central.':'The prize photo, estimated value, sponsor details and official rules must be finalized before the free signup opens. Deadline: December 1, 2026 at 11:59 PM Central.'}</p></div>;
- if(done)return <div className="dealer-thanks"><h2>Check your inbox!</h2><p>Confirm your email with the link we sent. Only confirmed free entries are eligible for the drawing.</p></div>;
+ if(done)return <div className="dealer-thanks"><h2>Check your inbox!</h2><p>Confirm your email with the link we sent. Only verified free entries are eligible for the drawing.</p><p>If it isn't there, check spam. You can submit the form again after 15 minutes to request a new link. No duplicate entry is created.</p><button type="button" className="button button-outline" onClick={()=>setDone(false)}>Try my email again →</button></div>;
  async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError('');
   const f=new FormData(e.currentTarget);const b={name:f.get('name'),email:f.get('email'),
    age18:f.get('age18')==='on',usResident:f.get('usResident')==='on',agree:f.get('agree')==='on',

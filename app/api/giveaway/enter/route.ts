@@ -19,13 +19,28 @@ export async function POST(req:NextRequest){
   const g=rows[0],now=Date.now();
   if(!g||!g.entries_open||!g.starts_at||!g.ends_at||now<Date.parse(g.starts_at)||now>=Date.parse(g.ends_at)||now>=MUSIAL_GIVEAWAY_CLOSING_INSTANT||!g.rules_text||g.approximate_retail_value_cents===null)
    throw new PortalError('Giveaway entries are not currently open.',409);
-  const prev=await db<Array<{id:string}>>('shop_giveaway_entries?select=id&giveaway_id=eq.'+g.id+'&email=eq.'+encodeURIComponent(email)+'&limit=1');
-  if(prev.length)return NextResponse.json({ok:true,message:'If you have already entered, check your email for the confirmation link. One entry per person.'});
+  const prev=await db<Array<{id:string;confirmed_at:string|null;confirmation_last_sent_at:string|null;confirmation_send_count:number}>>(
+   'shop_giveaway_entries?select=id,confirmed_at,confirmation_last_sent_at,confirmation_send_count&giveaway_id=eq.'+g.id+'&email=eq.'+encodeURIComponent(email)+'&limit=1');
+  // Avoid disclosing which email addresses are already entrants. Resend only
+  // after a 15-minute cooldown and never add a second eligible entry.
+  if(prev[0]?.confirmed_at)return NextResponse.json({ok:true,message:'If you already entered, your email may already be confirmed.'});
+  if(prev[0]&&((prev[0].confirmation_last_sent_at&&now-Date.parse(prev[0].confirmation_last_sent_at)<15*60000)
+     ||prev[0].confirmation_send_count>=8))
+    return NextResponse.json({ok:true,message:'Check your email for the confirmation link, or try again later.'});
   const token=randomBytes(32).toString('hex');
-  const entries=await db<Array<{id:string}>>('shop_giveaway_entries',{method:'POST',headers:{Prefer:'return=representation'},
-   body:JSON.stringify({giveaway_id:g.id,name,email,newsletter_opt_in:b.marketing===true,confirmation_hash:hash(token)})});
-  if(!entries[0])throw new PortalError('Could not record your entry.',503);
-  inserted=entries[0].id;
+  const sentAt=new Date().toISOString();
+  if(prev[0]){
+   await db('shop_giveaway_entries?id=eq.'+prev[0].id+'&confirmed_at=is.null',{
+    method:'PATCH',headers:{Prefer:'return=minimal'},
+    body:JSON.stringify({confirmation_hash:hash(token),confirmation_expires_at:new Date(now+48*3600000).toISOString(),
+     confirmation_last_sent_at:sentAt,confirmation_send_count:prev[0].confirmation_send_count+1})});
+  }else{
+   const entries=await db<Array<{id:string}>>('shop_giveaway_entries',{method:'POST',headers:{Prefer:'return=representation'},
+    body:JSON.stringify({giveaway_id:g.id,name,email,newsletter_opt_in:b.marketing===true,
+      confirmation_hash:hash(token),confirmation_last_sent_at:sentAt,confirmation_send_count:1})});
+   if(!entries[0])throw new PortalError('Could not record your entry.',503);
+   inserted=entries[0].id;
+  }
   const key=process.env.RESEND_API_KEY,from=process.env.RESEND_FROM_EMAIL;
   if(!key||!from)throw new PortalError('Email confirmation is temporarily unavailable.',503);
   const confirmation=req.nextUrl.origin+'/giveaway/verify?token='+encodeURIComponent(token);
