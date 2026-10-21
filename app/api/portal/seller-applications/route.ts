@@ -1,6 +1,7 @@
 import {NextRequest} from 'next/server';
 import {authorized,db,failure,json,PortalError} from '@/lib/server/portal';
 import {sendShopAlert} from '@/lib/server/alerts';
+import {emailDealerAccountUpdate} from '@/lib/server/dealer-notifications';
 function owner(role:string|null){if(role!=='owner'&&role!=='admin')throw new PortalError('Platform administrator access required.',403);}
 export async function GET(req:NextRequest){
  try{const c=await authorized(req);owner(c.platformRole);
@@ -17,13 +18,19 @@ export async function POST(req:NextRequest){
   const uuid=/^[a-f0-9]{8}-[a-f0-9-]{27,}$/i;
   if(b.action==='approve'||b.action==='decline'){
    if(!uuid.test(b.applicationId||''))throw new PortalError('Invalid application',400);
+   const rows=await db<Array<{contact_email:string;shop_name:string}>>('seller_applications?select=contact_email,shop_name&id=eq.'+b.applicationId+'&limit=1');
    const result=await db<unknown>('rpc/hcs_review_seller_application',{method:'POST',body:JSON.stringify({p_application:b.applicationId,p_actor:c.userId,p_decision:b.action==='approve'?'approved':'declined'})});
    try{await sendShopAlert('seller_application','Seller application '+b.action,String(b.applicationId)+' reviewed by '+c.email)}catch{}
+   if(rows[0])try{await emailDealerAccountUpdate(rows[0].contact_email,rows[0].shop_name,b.action==='approve'?'approved':'declined')}
+   catch(e){console.error('Dealer application outcome email could not be delivered',e)}
    return json({ok:true,result});
   }
   if(b.action==='activate'){
    if(!uuid.test(b.sellerId||''))throw new PortalError('Invalid seller ID',400);
+   const shop=await db<Array<{contact_email:string;display_name:string}>>('sellers?select=contact_email,display_name&id=eq.'+b.sellerId+'&limit=1');
    const result=await db<unknown>('rpc/hcs_activate_seller',{method:'POST',body:JSON.stringify({p_seller:b.sellerId,p_actor:c.userId})});
+   if(shop[0]?.contact_email)try{await emailDealerAccountUpdate(shop[0].contact_email,shop[0].display_name,'active')}
+   catch(e){console.error('Dealer activation email could not be delivered',e)}
    return json({ok:true,result});
   }
   throw new PortalError('Unknown action',400);
