@@ -12,7 +12,7 @@ export function GiveawayPanel(){
   const fields=new FormData(e.currentTarget);const g=data.giveaway;
   const when=(s:string)=>{const v=String(fields.get(s)||'');return v?new Date(v).toISOString():null};
   const body={action:'save',prizeTitle:fields.get('prizeTitle'),prizeDescription:fields.get('prizeDescription'),
-   prizeImageUrl:fields.get('prizeImageUrl'),arvCents:Math.round(Number(fields.get('arv'))*100),
+   prizeImageUrl:fields.get('prizeImageUrl'),arvCents:String(fields.get('arv')||'').trim()?Math.round(Number(fields.get('arv'))*100):null,
    organizerContact:fields.get('organizerContact'),rules:fields.get('rules'),startsAt:when('startsAt'),endsAt:when('endsAt'),
    entriesOpen:fields.get('entriesOpen')==='on'};
   if(body.entriesOpen&&!confirm('The published photo, prize, contact, and official rules have been verified and reviewed. Open the public giveaway?')){setBusy(false);return}
@@ -41,7 +41,7 @@ export function GiveawayPanel(){
  <label>Exact card, autograph details and authentication status<textarea name="prizeDescription" required minLength={20} maxLength={1000} defaultValue={g.prize_description} rows={4}/></label>
  <label>Prize photo HTTPS URL<input name="prizeImageUrl" type="url" value={photoUrl} onChange={e=>setPhotoUrl(e.target.value)}/></label>
  <label>Upload actual signed card photograph (JPG, PNG, WebP)<input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp"/></label><button type="button" disabled={busy} className="button button-outline" onClick={uploadPhoto}>Upload photograph</button>{photoUrl&&<img src={photoUrl} alt="Current giveaway card photo" style={{maxWidth:240,width:"100%",height:"auto"}}/>}
- <label>Approximate retail value ($)<input name="arv" type="number" step="0.01" min="0.01" required defaultValue={g.approximate_retail_value_cents===null?'':String(g.approximate_retail_value_cents/100)}/></label>
+ <label>Approximate retail value ($)<input name="arv" type="number" step="0.01" min="0.01" defaultValue={g.approximate_retail_value_cents===null?'':String(g.approximate_retail_value_cents/100)}/></label>
  <label>Organizer contact, including address<input name="organizerContact" maxLength={500} defaultValue={g.organizer_contact}/></label>
  <label>Opens (local time)<input name="startsAt" type="datetime-local" defaultValue={local(g.starts_at)}/></label>
  <label>Closes (local time)<input name="endsAt" type="datetime-local" defaultValue={local(g.ends_at)}/></label>
