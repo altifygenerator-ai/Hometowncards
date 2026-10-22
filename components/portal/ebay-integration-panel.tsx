@@ -94,9 +94,8 @@ export function EbayIntegrationPanel({sellerId}:{sellerId:string}){
      <button className="button button-outline" disabled={busy} onClick={reset}>Restart listing import</button>
      <button className="button button-outline" disabled={busy} onClick={disconnect}>Disconnect eBay</button>
     </div>
-    <p>Sync never deletes your website listings just because a listing is missing from an eBay response.
-     A genuine paid eBay order reduces local stock once. Website sales can update the matching eBay listing after you enable two-way mode.
-     Any conflicts appear for manual review.</p>
+    <p>Automatic eBay checks run every five minutes in batches of up to 600 listings. Large catalogs may need several passes; use “Sync cards & sports plates” to continue the full listing pass now.
+     Sync never deletes your website listings just because a listing is missing from an eBay response. A genuine paid eBay order reduces local stock once. Website sales can update the matching eBay listing after you enable two-way mode. Any conflicts appear for manual review.</p>
    </>}
   {error&&<p role="alert" className="portal-error">{error}</p>}
   {notice&&<p role="status">{notice}</p>}
